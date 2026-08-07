@@ -48,7 +48,7 @@ pip install -r requirements.txt
 ### Bước 4: Chạy migration để khởi tạo database
 
 ```bash
-python src/manage.py migrate
+cd src && python src/manage.py migrate
 ```
 
 ---
@@ -118,7 +118,7 @@ pip install -r requirements.txt
 ### ステップ 4: データベースのマイグレーションを実行する
 
 ```bash
-python src/manage.py migrate
+cd src && python src/manage.py migrate
 ```
 
 ---
