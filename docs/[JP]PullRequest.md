@@ -107,7 +107,11 @@ Closes #123
 
 ## 8. レビューを依頼する
 
-レビュアーを設定し、レビューを依頼します。
+レビュアーを設定し、レビューを依頼し
+	c.JSON(http.StatusOK, gin.H{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})ます。
 
 レビューコメントがあれば修正し、再度コミット・プッシュします。
 
