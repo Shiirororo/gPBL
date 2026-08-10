@@ -1,11 +1,42 @@
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
 
-class User(models.Model):
+class UserManager(BaseUserManager):
+    """Custom manager for the User model using user_name as the identifier."""
+
+    def create_user(self, user_name, password=None, **extra_fields):
+        if not user_name:
+            raise ValueError("The user_name field is required.")
+        user = self.model(user_name=user_name, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, user_name, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+        return self.create_user(user_name, password, **extra_fields)
+
+
+class User(AbstractBaseUser, PermissionsMixin):
     user_id = models.BigAutoField(primary_key=True)
     user_name = models.CharField(max_length=100, unique=True)
-    password = models.CharField(max_length=255)
     score = models.IntegerField(default=0)
+
+    # Required by Django admin & auth system
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    objects = UserManager()
+
+    # Use user_name as the login identifier (replaces default 'username')
+    USERNAME_FIELD = 'user_name'
+    REQUIRED_FIELDS = []
 
     class Meta:
         db_table = 'users'

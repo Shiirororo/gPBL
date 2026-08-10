@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     "core"
 ]
 
+# Use the custom User model defined in core app
+AUTH_USER_MODEL = 'core.User'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -89,7 +92,7 @@ DATABASES = {
         'NAME': 'app_db',
         'USER': 'gpbl',
         'PASSWORD': '123456',
-        'HOST': '52.221.202.209',
+        'HOST': '3.1.85.139',
         'PORT': '3306',
     }
 }
@@ -98,6 +101,12 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+}
+
+# Map SimpleJWT token claims to our custom User primary key field
+SIMPLE_JWT = {
+    'USER_ID_FIELD': 'user_id',
+    'USER_ID_CLAIM': 'user_id',
 }
 
 # Password validation
