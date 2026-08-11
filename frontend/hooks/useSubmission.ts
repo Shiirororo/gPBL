@@ -1,0 +1,73 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import { SubmissionApiError, submitCode } from "@/features/submissions/api";
+import type { SubmissionResult } from "@/features/submissions/types";
+import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace";
+
+interface SubmitArguments {
+  challengeId: number;
+  code: string;
+  language: string;
+}
+
+export function useSubmission() {
+  const workspace = useChallengeWorkspace();
+  const [result, setResult] = useState<SubmissionResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submit = useCallback(async (input?: Partial<SubmitArguments>) => {
+    const resolvedInput: SubmitArguments = {
+      challengeId: input?.challengeId ?? workspace.challenge?.challenge_id ?? 0,
+      code: input?.code ?? workspace.currentCode,
+      language: input?.language ?? workspace.language,
+    };
+
+    if (!resolvedInput.challengeId) {
+      setError("Open a challenge before submitting code.");
+      return null;
+    }
+    if (!resolvedInput.code.trim()) {
+      setError("Write some code before submitting.");
+      return null;
+    }
+    if (!resolvedInput.language.trim()) {
+      setError("Select a programming language before submitting.");
+      return null;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+    workspace.setLoading(true);
+    workspace.setError(null);
+    try {
+      const nextResult = await submitCode(resolvedInput);
+      setResult(nextResult);
+      workspace.setSubmissionResult({
+        status: nextResult.status,
+        passedTestcases: nextResult.passed_testcases,
+        totalTestcases: nextResult.total_testcases,
+      });
+      return nextResult;
+    } catch (cause) {
+      const message = cause instanceof SubmissionApiError
+          ? cause.message
+          : "The submission request could not be completed.";
+      setError(message);
+      workspace.setError(message);
+      return null;
+    } finally {
+      setIsSubmitting(false);
+      workspace.setLoading(false);
+    }
+  }, [workspace]);
+
+  const clearResult = useCallback(() => {
+    setResult(null);
+    setError(null);
+    workspace.setSubmissionResult(null);
+  }, [workspace]);
+
+  return { result, error, isSubmitting, submit, clearResult };
+}
