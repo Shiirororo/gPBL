@@ -20,4 +20,6 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('core.auth.urls')),
+    # Tất cả API quản lý phiên chat, autosave và hỏi AI nằm dưới namespace này.
+    path('api/ai/', include('core.ai.urls')),
 ]
