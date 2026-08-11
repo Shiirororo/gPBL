@@ -21,5 +21,6 @@ urlpatterns = [
   #  path('admin/', admin.site.urls),
     path('api/auth/', include('core.auth.urls')),
     path('api/', include('core.submissions.urls')),
-    path('api/challenges/', include('core.challenge.urls'))
+    path('api/challenges/', include('core.challenge.urls')),
+    path('api/user/', include('core.user.urls')),
 ]
