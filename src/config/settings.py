@@ -95,7 +95,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME') or os.getenv('DATABASE_NAME', 'app_db'),
         'USER': os.getenv('DB_USER') or os.getenv('DATABASE_USER', 'gpbl'),
         'PASSWORD': os.getenv('DB_PASSWORD') or os.getenv('DATABASE_PASSWORD', '123456'),
-        'HOST': os.getenv('DB_HOST') or os.getenv('DATABASE_HOST', '127.0.0.1'),
+        'HOST': os.getenv('DB_HOST') or os.getenv('DATABASE_HOST', '18.142.252.44'),
         'PORT': os.getenv('DB_PORT') or os.getenv('DATABASE_PORT', '3306'),
     }
 }

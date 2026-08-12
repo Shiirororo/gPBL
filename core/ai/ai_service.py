@@ -187,9 +187,9 @@ Your goal is to help the user understand enough to solve it themselves.
 """
 
     try:
-        response = client.responses.create(
+        response = client.chat.completions.create(
             model=MODEL,
-            input=prompt
+            messages=[{"role": "user", "content": prompt}],
         )
     except APITimeoutError as error:
         raise AIServiceError("The OpenAI request timed out.") from error
@@ -202,7 +202,7 @@ Your goal is to help the user understand enough to solve it themselves.
 
     # Chuyển lỗi thư viện thành lỗi dịch vụ ổn định để Django API xử lý mà không lộ chi tiết nội bộ.
 
-    output_text = getattr(response, "output_text", None)
+    output_text = response.choices[0].message.content if response.choices else None
     if not isinstance(output_text, str) or not output_text.strip():
         raise AIServiceError("OpenAI returned an empty or invalid response.")
 
