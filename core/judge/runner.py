@@ -15,11 +15,10 @@ Security model:
 Supports Python only (as per project spec).
 
 Stdin strategy:
-  Because the Docker SDK's attach_socket API is fragile across SDK versions,
-  we use a simpler and more reliable approach: we embed the stdin payload
-  directly inside the solution script using sys.stdin.read() injection via
-  a wrapper that replaces builtins.input and sys.stdin before importing the
-  user's solution module.  This avoids all socket-level stdin piping issues.
+  Instead of script execution and stdin/stdout piping, the judge now imports
+  the user's code as a module and calls a specific function.
+  The input payload is a JSON array of arguments, passed to the function wrapper.
+  The return value of the function is printed to stdout for comparison.
 """
 
 import os
@@ -107,25 +106,35 @@ class ExecutionResult:
 # ---------------------------------------------------------------------------
 
 # The wrapper script runs inside the container.
-# It injects the stdin payload via io.StringIO so user code that calls
-# input() or reads from sys.stdin works without any socket-level piping.
+# It parses the JSON input, imports the solution, calls the target function,
+# and prints the result.
 _WRAPPER_TEMPLATE = textwrap.dedent("""\
-    import sys, io, runpy, builtins
+    import sys, json, importlib.util
 
-    _STDIN_PAYLOAD = {stdin_payload!r}
+    _ARGS_JSON = {stdin_payload!r}
+    _FUNCTION_NAME = {function_name!r}
+    _SOLUTION_PATH = {solution_path!r}
 
-    _stream = io.StringIO(_STDIN_PAYLOAD)
-    sys.stdin = _stream
+    # Load the user's solution module
+    spec = importlib.util.spec_from_file_location("solution", _SOLUTION_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
-    _original_input = builtins.input
-    def _patched_input(prompt=""):
-        line = _stream.readline()
-        if line.endswith("\\n"):
-            line = line[:-1]
-        return line
-    builtins.input = _patched_input
+    # Find the function
+    func = getattr(module, _FUNCTION_NAME, None)
+    if func is None:
+        print(f"Error: function '{{_FUNCTION_NAME}}' not found.", file=sys.stderr)
+        sys.exit(1)
+    if not callable(func):
+        print(f"Error: '{{_FUNCTION_NAME}}' is not callable.", file=sys.stderr)
+        sys.exit(1)
 
-    runpy.run_path({solution_path!r}, run_name="__main__")
+    # Parse arguments and call
+    args = json.loads(_ARGS_JSON) if _ARGS_JSON.strip() else []
+    if not isinstance(args, list):
+        args = [args]
+    result = func(*args)
+    print(result)
 """)
 
 
@@ -143,8 +152,9 @@ class DockerRunner:
 
         runner = DockerRunner()
         result = runner.run(
-            code='print(int(input()) * 2)',
-            stdin_data='21\\n',
+            code='def solution(n): return n * 2',
+            stdin_data='[21]',
+            function_name='solution'
         )
         print(result.status, result.stdout)
 
@@ -171,6 +181,7 @@ class DockerRunner:
         self,
         code: str,
         stdin_data: str = "",
+        function_name: str = "solution",
     ) -> ExecutionResult:
         """
         Execute *code* inside an isolated container.
@@ -194,6 +205,7 @@ class DockerRunner:
             wrapper_src = _WRAPPER_TEMPLATE.format(
                 stdin_payload=stdin_data,
                 solution_path=CONTAINER_SOLUTION,
+                function_name=function_name,
             )
             wrapper_path = os.path.join(host_tmpdir, "runner.py")
             with open(wrapper_path, "w", encoding="utf-8") as fh:

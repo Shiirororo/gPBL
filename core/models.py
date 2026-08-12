@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
@@ -67,6 +69,7 @@ class CodingChallenge(models.Model):
     categories = models.JSONField(null=True, blank=True)
     learning_status = models.CharField(max_length=50, null=True, blank=True)
     example_of_correct_code = models.TextField(null=True, blank=True)
+    function_name = models.CharField(max_length=100, default='solution')
     acceptance_rate = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -94,8 +97,8 @@ class TestCase(models.Model):
         related_name='test_cases'
     )
 
-    input = models.TextField()
-    output = models.TextField()
+    input = models.JSONField()
+    output = models.JSONField()
     is_hidden = models.BooleanField(default=False)
 
     class Meta:
@@ -204,3 +207,114 @@ class AiQuestion(models.Model):
 
     def __str__(self):
         return f"AiQuestion #{self.question_id} - {self.user}"
+
+
+class AIConversation(models.Model):
+    """Một phiên làm bài độc lập của người dùng trên một challenge."""
+
+    class Status(models.TextChoices):
+        ACTIVE = 'active', 'Active'
+        COMPLETED = 'completed', 'Completed'
+        ABANDONED = 'abandoned', 'Abandoned'
+
+    conversation_id = models.BigAutoField(primary_key=True)
+
+    # Hai khóa ngoại này xác định chủ sở hữu và đề bài của phiên làm việc.
+    user = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        db_column='user_id',
+        related_name='ai_conversations'
+    )
+    challenge = models.ForeignKey(
+        'CodingChallenge',
+        on_delete=models.CASCADE,
+        db_column='challenge_id',
+        related_name='ai_conversations'
+    )
+
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.ACTIVE
+    )
+
+    # current_code là bản nháp mới nhất để có thể tiếp tục khi mở lại challenge.
+    # revision tăng sau mỗi lần lưu, giúp tầng service phát hiện ghi đè đồng thời.
+    current_code = models.TextField(blank=True, default='')
+    revision = models.PositiveBigIntegerField(default=0)
+
+    # Các mốc thời gian phục vụ việc sắp xếp, tiếp tục và đóng một phiên làm bài.
+    started_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'ai_conversations'
+        indexes = [
+            models.Index(
+                fields=['user', 'challenge', 'updated_at'],
+                name='idx_aiconv_user_chal_upd'
+            ),
+            models.Index(
+                fields=['user', 'status', 'updated_at'],
+                name='idx_aiconv_user_stat_upd'
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"AIConversation #{self.conversation_id} - "
+            f"{self.user} - {self.challenge}"
+        )
+
+
+class AIExchange(models.Model):
+    """Một lượt hỏi - đáp AI cùng snapshot code tại đúng thời điểm hỏi."""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        COMPLETED = 'completed', 'Completed'
+        FAILED = 'failed', 'Failed'
+
+    exchange_id = models.BigAutoField(primary_key=True)
+    conversation = models.ForeignKey(
+        'AIConversation',
+        on_delete=models.CASCADE,
+        db_column='conversation_id',
+        related_name='exchanges'
+    )
+
+    sequence = models.PositiveBigIntegerField()
+    user_question = models.TextField()
+
+    code_snapshot = models.TextField(blank=True, default='')
+    assistant_hint = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    request_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING
+    )
+
+    class Meta:
+        db_table = 'ai_exchanges'
+        ordering = ['sequence', 'exchange_id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['conversation', 'sequence'],
+                name='uq_aiexchange_conv_sequence'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(sequence__gt=0),
+                name='ck_aiexchange_sequence_gt_0'
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"AIExchange #{self.exchange_id} - "
+            f"conversation #{self.conversation_id} - sequence {self.sequence}"
+        )
