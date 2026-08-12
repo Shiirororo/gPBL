@@ -1,40 +1,17 @@
 "use client";
 
 import { IdentificationCard, Star, User } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface UserProfile {
-  user_name: string;
-  score: number;
-}
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function ProfileForm() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { currentUser: profile, loading, error, refreshCurrentUser } = useCurrentUser();
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    void fetch("/api/user/me", { cache: "no-store", signal: controller.signal })
-      .then(async (response) => {
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.detail || "Unable to load profile.");
-        setProfile(data as UserProfile);
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : "Unable to load profile.");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, []);
+    if (!profile && !loading && !error) void refreshCurrentUser();
+  }, [profile, loading, error, refreshCurrentUser]);
 
   return (
     <Card className="overflow-hidden rounded-2xl border-border bg-card shadow-xl shadow-black/10">
@@ -47,7 +24,7 @@ export default function ProfileForm() {
         <CardDescription>Your gPBL account and learning progress.</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
-        {loading && <p className="text-sm text-muted-foreground">Loading profile...</p>}
+        {loading && !profile && <p className="text-sm text-muted-foreground">Loading profile...</p>}
         {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
         {!loading && !error && profile && (
           <dl className="grid gap-4 sm:grid-cols-2">

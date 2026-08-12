@@ -31,8 +31,20 @@ export async function POST(request: Request): Promise<NextResponse> {
       )
     }
 
+    const profileResponse = await fetch(`${getBackendUrl()}/api/user/me/`, {
+      headers: { Authorization: `Bearer ${data.access}` },
+      cache: "no-store",
+    })
+    const user = await readResponseBody(profileResponse)
+    if (!profileResponse.ok) {
+      return NextResponse.json(
+        { message: "Login succeeded, but the user profile could not be loaded." },
+        { status: 502 },
+      )
+    }
+
     await setAuthCookies(data.access, data.refresh)
-    return NextResponse.json({ authenticated: true })
+    return NextResponse.json({ authenticated: true, user })
   } catch (error) {
     return backendFailureResponse(error)
   }

@@ -3,6 +3,7 @@ import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ToastProvider } from "@/components/ui/toast-provider";
+import { UserProvider } from "@/providers/UserProvider";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["vietnamese", "latin"], // Hỗ trợ đầy đủ ký tự tiếng Việt.
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-full font-[family-name:var(--font-jetbrains-mono)]">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <ToastProvider>
-            <main>{children}</main>
+            <UserProvider>
+              <main>{children}</main>
+            </UserProvider>
           </ToastProvider>
         </ThemeProvider>
       </body>
