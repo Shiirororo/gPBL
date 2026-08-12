@@ -44,11 +44,7 @@ export function useSubmission() {
     try {
       const nextResult = await submitCode(resolvedInput);
       setResult(nextResult);
-      workspace.setSubmissionResult({
-        status: nextResult.status,
-        passedTestcases: nextResult.passed_testcases,
-        totalTestcases: nextResult.total_testcases,
-      });
+      workspace.setSubmissionResult(nextResult);
       return nextResult;
     } catch (cause) {
       const message = cause instanceof SubmissionApiError

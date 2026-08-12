@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import type { Challenge } from "@/features/challenges/types";
+import type { SubmissionResult } from "@/features/submissions/types";
 
 export interface AIMessage {
   id: string | number;
@@ -16,13 +17,6 @@ export interface AIMessage {
   content: string;
   sequence?: number;
   codeSnapshot?: string;
-}
-
-export interface SubmissionResult {
-  status: string;
-  passedTestcases: number;
-  totalTestcases?: number;
-  message?: string;
 }
 
 interface WorkspaceState {

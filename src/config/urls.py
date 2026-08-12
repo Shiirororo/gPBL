@@ -11,4 +11,5 @@ urlpatterns = [
     path("api/", include("core.submissions.urls")),
     path("api/challenges/", include("core.challenge.urls")),
     path("api/user/", include("core.user.urls")),
+    path("api/leaderboard/", include("core.leaderboard.urls")),
 ]

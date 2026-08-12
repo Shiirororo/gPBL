@@ -14,6 +14,9 @@ export default function ChatBoxDrawer() {
 
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement | null
+            const isTyping = target?.matches("input, textarea, [contenteditable='true']")
+            if (isTyping) return
             if (e.key === "`") {
                 e.preventDefault()
                 setOpen((prev) => !prev)

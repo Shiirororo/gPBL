@@ -10,10 +10,15 @@ class ChallengeDetailView(APIView):
     View to retrieve a challenge by its ID.
     """
 
-    def get(self, request, challenge_id):
+    def get(self, request, challenge_id=None):
         """
-        Retrieve a challenge by its ID.
+        Retrieve all challenges or one challenge by its ID.
         """
+        if challenge_id is None:
+            challenges = CodingChallenge.objects.all().order_by('challenge_id')
+            serializer = CodingChallengeSerializer(challenges, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
         try:
             challenge = CodingChallenge.objects.get(challenge_id=challenge_id)
             serializer = CodingChallengeSerializer(challenge)
