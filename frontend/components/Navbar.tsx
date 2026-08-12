@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Code, SquaresFour, Trophy, User } from "@phosphor-icons/react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { Code, SignOut, SquaresFour, Trophy, User } from "@phosphor-icons/react";
+
+import { logout } from "@/features/auth/api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 // ─── Nav links definition ─────────────────────────────────────────────────────
 
@@ -68,6 +72,28 @@ function NavLink({
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { clearCurrentUser } = useCurrentUser();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    setLogoutError(null);
+
+    try {
+      await logout();
+      clearCurrentUser();
+      router.replace("/login");
+      router.refresh();
+    } catch (cause) {
+      setLogoutError(cause instanceof Error ? cause.message : "Unable to log out.");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-border/60 bg-background/80 px-4 backdrop-blur-md">
@@ -97,11 +123,29 @@ export default function Navbar() {
 
       {/* ── Right side: avatar ── */}
       <div className="flex items-center gap-2">
+        {logoutError && (
+          <span role="alert" className="max-w-48 truncate text-[10px] text-red-400" title={logoutError}>
+            {logoutError}
+          </span>
+        )}
         <button
+          type="button"
           id="navbar-user-avatar"
+          aria-label="Open profile"
+          onClick={() => router.push("/profile")}
           className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10 text-foreground ring-1 ring-border transition-all hover:bg-foreground/20"
         >
           <User size={13} />
+        </button>
+        <button
+          type="button"
+          aria-label="Log out"
+          disabled={isLoggingOut}
+          onClick={() => void handleLogout()}
+          className="flex h-7 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <SignOut size={13} />
+          <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
         </button>
       </div>
     </header>

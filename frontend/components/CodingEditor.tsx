@@ -32,6 +32,7 @@ export default function CodingEditor({ className }: { className?: string }) {
           <div className="flex items-center gap-2">
             <LanguageSelector value={language} onChange={setLanguage} />
             <Button
+              className="rounded-lg"
               type="button"
               disabled={isSubmitting || !currentCode.trim()}
               onClick={() => void submit()}
