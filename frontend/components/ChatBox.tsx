@@ -13,7 +13,7 @@ import { useAIConversationController } from "@/providers/AIConversationProvider"
 
 export default function ChatBox() {
   const [draft, setDraft] = React.useState("");
-  const { messages, error, conversationId } = useChallengeWorkspace();
+  const { messages, aiError, conversationId } = useChallengeWorkspace();
   const { sendMessage, isSending, isInitializing, isSaving } = useAIConversationController();
   const disabled = !draft.trim() || isSending || isInitializing || conversationId === null;
 
@@ -56,7 +56,7 @@ export default function ChatBox() {
         </MessageScrollerProvider>
       </div>
 
-      {error && <p className="border-t border-border px-3 py-2 text-xs text-red-400">{error}</p>}
+      {aiError && <p className="border-t border-border px-3 py-2 text-xs text-red-400">{aiError}</p>}
       <div className="flex items-end gap-2 border-t border-border bg-card px-3 py-3">
         <textarea
           aria-label="Type a message"

@@ -23,7 +23,7 @@ function messagesFrom(detail: AIConversationDetail): AIMessage[] {
 
 export function useAIConversation() {
   const workspace = useChallengeWorkspace()
-  const { conversationId, currentCode, revision, setConversation, setCurrentCode, setError } = workspace
+  const { conversationId, currentCode, revision, setConversation, setCurrentCode, setAIError } = workspace
   const challengeId = workspace.challenge?.challenge_id
   const starterCode = workspace.challenge?.starter_code ?? ""
   const [isSending, setIsSending] = useState(false)
@@ -46,7 +46,7 @@ export function useAIConversation() {
   const initialize = useCallback(async (isCurrent: () => boolean = () => true) => {
     if (!challengeId) return
     setIsInitializing(true)
-    setError(null)
+    setAIError(null)
     try {
       const conversations = await aiAPI.list(challengeId)
       if (!isCurrent()) return
@@ -63,11 +63,11 @@ export function useAIConversation() {
         setCurrentCode(created.current_code || starterCode)
       }
     } catch (error) {
-      if (isCurrent()) setError(error instanceof Error ? error.message : "Unable to open the AI conversation.")
+      if (isCurrent()) setAIError(error instanceof Error ? error.message : "Unable to open the AI conversation.")
     } finally {
       if (isCurrent()) setIsInitializing(false)
     }
-  }, [challengeId, setConversation, setCurrentCode, setError, starterCode])
+  }, [challengeId, setConversation, setCurrentCode, setAIError, starterCode])
 
   // Challenge thay đổi thì hủy quyền cập nhật state của request cũ.
   useEffect(() => {
@@ -80,7 +80,7 @@ export function useAIConversation() {
     const trimmed = question.trim()
     if (!trimmed || isSending || conversationId === null) return false
     setIsSending(true)
-    setError(null)
+    setAIError(null)
     const previousRequest = requestRef.current
     const samePayload = previousRequest !== null &&
       previousRequest.conversationId === conversationId &&
@@ -111,20 +111,20 @@ export function useAIConversation() {
         await loadDetail(conversationId, false).catch(() => undefined)
       }
       if (error instanceof AIAPIError && error.code === "ai_unavailable") requestRef.current = null
-      setError(error instanceof Error ? error.message : "Unable to send the message.")
+      setAIError(error instanceof Error ? error.message : "Unable to send the message.")
       return false
     } finally {
       setIsSending(false)
     }
-  }, [conversationId, currentCode, isSending, loadDetail, revision, setError])
+  }, [conversationId, currentCode, isSending, loadDetail, revision, setAIError])
 
   const startNew = useCallback(async () => {
     if (!challengeId) return
     const created = await aiAPI.create(challengeId)
     setConversation(created.conversation_id, created.revision, [])
     setCurrentCode(created.current_code || starterCode)
-    setError(null)
-  }, [challengeId, setConversation, setCurrentCode, setError, starterCode])
+    setAIError(null)
+  }, [challengeId, setConversation, setCurrentCode, setAIError, starterCode])
 
   const close = useCallback(async (status: Exclude<ConversationStatus, "active">) => {
     if (conversationId === null) return
