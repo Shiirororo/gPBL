@@ -16,23 +16,23 @@ import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace"
 import { AIConversationProvider } from "@/providers/AIConversationProvider"
 
 export default function ChallengeWorkspace({ challengeId }: { challengeId: number }) {
-  const { setChallenge, setError, setLoading } = useChallengeWorkspace()
+  const { setChallenge, setChallengeError, setLoading } = useChallengeWorkspace()
 
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true)
-    setError(null)
+    setChallengeError(null)
 
     void getChallenge(challengeId, controller.signal)
       .then(setChallenge)
       .catch((cause: unknown) => {
         if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : "Unable to load challenge.")
+          setChallengeError(cause instanceof Error ? cause.message : "Unable to load challenge.")
         }
       })
 
     return () => controller.abort()
-  }, [challengeId, setChallenge, setError, setLoading])
+  }, [challengeId, setChallenge, setChallengeError, setLoading])
 
   return (
     <AIConversationProvider>

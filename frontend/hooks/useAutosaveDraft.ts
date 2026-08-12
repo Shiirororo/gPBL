@@ -7,7 +7,7 @@ import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace"
 
 export function useAutosaveDraft(delay = 1200) {
   const workspace = useChallengeWorkspace()
-  const { conversationId, currentCode, revision, setError, setRevision } = workspace
+  const { conversationId, currentCode, revision, setAIError, setRevision } = workspace
   const [isSaving, setIsSaving] = useState(false)
   const lastSavedCode = useRef<string | null>(null)
 
@@ -31,7 +31,7 @@ export function useAutosaveDraft(delay = 1200) {
           const latest = await aiAPI.detail(conversationId).catch(() => null)
           if (current && latest) setRevision(latest.revision)
         } else {
-          if (current) setError(error instanceof Error ? error.message : "Unable to save the draft.")
+          if (current) setAIError(error instanceof Error ? error.message : "Unable to save the draft.")
         }
       } finally {
         if (current) setIsSaving(false)
@@ -47,7 +47,7 @@ export function useAutosaveDraft(delay = 1200) {
     conversationId,
     currentCode,
     revision,
-    setError,
+    setAIError,
     setRevision,
   ])
 

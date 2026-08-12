@@ -28,7 +28,8 @@ interface WorkspaceState {
   messages: AIMessage[];
   submissionResult: SubmissionResult | null;
   loading: boolean;
-  error: string | null;
+  challengeError: string | null;
+  aiError: string | null;
 }
 
 type WorkspaceAction =
@@ -41,7 +42,8 @@ type WorkspaceAction =
   | { type: "appendMessage"; message: AIMessage }
   | { type: "setSubmissionResult"; result: SubmissionResult | null }
   | { type: "setLoading"; loading: boolean }
-  | { type: "setError"; error: string | null };
+  | { type: "setChallengeError"; error: string | null }
+  | { type: "setAIError"; error: string | null };
 
 function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
@@ -56,7 +58,8 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
         messages: [],
         submissionResult: null,
         loading: false,
-        error: null,
+        challengeError: null,
+        aiError: null,
       };
     case "setCode":
       return { ...state, currentCode: action.code };
@@ -79,8 +82,17 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       return { ...state, submissionResult: action.result };
     case "setLoading":
       return { ...state, loading: action.loading };
-    case "setError":
-      return { ...state, error: action.error, loading: false };
+    case "setChallengeError":
+      return {
+        ...state,
+        challengeError: action.error,
+        loading: false,
+      };
+    case "setAIError":
+      return {
+        ...state,
+        aiError: action.error,
+      };
   }
 }
 
@@ -94,7 +106,8 @@ export interface ChallengeWorkspaceValue extends WorkspaceState {
   appendMessage: (message: AIMessage) => void;
   setSubmissionResult: (result: SubmissionResult | null) => void;
   setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
+  setChallengeError: (error: string | null) => void;
+  setAIError: (error: string | null) => void;
 }
 
 export const ChallengeWorkspaceContext = createContext<ChallengeWorkspaceValue | null>(null);
@@ -117,7 +130,8 @@ export function ChallengeWorkspaceProvider({
     messages: [],
     submissionResult: null,
     loading: initialChallenge === null,
-    error: null,
+    challengeError: null,
+    aiError: null,
   });
 
   // Callback ổn định giúp Monaco và ChatBox không render lại vì identity thay đổi.
@@ -130,11 +144,12 @@ export function ChallengeWorkspaceProvider({
   const appendMessage = useCallback((message: AIMessage) => dispatch({ type: "appendMessage", message }), []);
   const setSubmissionResult = useCallback((result: SubmissionResult | null) => dispatch({ type: "setSubmissionResult", result }), []);
   const setLoading = useCallback((loading: boolean) => dispatch({ type: "setLoading", loading }), []);
-  const setError = useCallback((error: string | null) => dispatch({ type: "setError", error }), []);
+  const setChallengeError = useCallback((error: string | null) => dispatch({ type: "setChallengeError", error }), []);
+  const setAIError = useCallback((error: string | null) => dispatch({ type: "setAIError", error }), []);
 
   const value = useMemo(
-    () => ({ ...state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, setSubmissionResult, setLoading, setError }),
-    [state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, setSubmissionResult, setLoading, setError],
+    () => ({ ...state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, setSubmissionResult, setLoading, setChallengeError, setAIError }),
+    [state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, setSubmissionResult, setLoading, setChallengeError, setAIError],
   );
 
   return <ChallengeWorkspaceContext.Provider value={value}>{children}</ChallengeWorkspaceContext.Provider>;

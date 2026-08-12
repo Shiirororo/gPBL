@@ -21,10 +21,10 @@ function FormattedText({ text }: { text: string }) {
 }
 
 export default function CodingProblemBox() {
-  const { challenge, loading, error } = useChallengeWorkspace();
+  const { challenge, loading, challengeError } = useChallengeWorkspace();
 
   if (loading) return <Card className="rounded-xl h-full p-6">Loading challenge...</Card>;
-  if (error) return <Card className="rounded-xl h-full p-6 text-red-400">{error}</Card>;
+  if (challengeError) return <Card className="rounded-xl h-full p-6 text-red-400">{challengeError}</Card>;
   if (!challenge) return <Card className="rounded-xl h-full p-6">Challenge not found.</Card>;
 
   const categories = challenge.categories ?? [];

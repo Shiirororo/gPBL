@@ -39,8 +39,6 @@ export function useSubmission() {
 
     setIsSubmitting(true);
     setError(null);
-    workspace.setLoading(true);
-    workspace.setError(null);
     try {
       const nextResult = await submitCode(resolvedInput);
       setResult(nextResult);
@@ -51,11 +49,9 @@ export function useSubmission() {
           ? cause.message
           : "The submission request could not be completed.";
       setError(message);
-      workspace.setError(message);
       return null;
     } finally {
       setIsSubmitting(false);
-      workspace.setLoading(false);
     }
   }, [workspace]);
 
