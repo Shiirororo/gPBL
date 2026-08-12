@@ -21,7 +21,10 @@ Stdin strategy:
   The return value of the function is printed to stdout for comparison.
 """
 
+import ast
+import json
 import os
+import re
 import stat
 import uuid
 import time
@@ -99,6 +102,143 @@ class ExecutionResult:
     stderr:     str = ""
     exit_code:  int | None = None
     runtime_ms: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Code preprocessor
+# ---------------------------------------------------------------------------
+
+def _prepare_code(code: str, function_name: str) -> str:
+    """
+    Normalise user-submitted code so the runner can always call
+    ``function_name(*args)`` as a plain module-level function.
+
+    LeetCode-style problems define the target as a *method* on a class::
+
+        def twoSum(self, nums, target): ...
+
+    The runner imports the module and does ``getattr(module, function_name)``
+    which finds the bare function — but calling it without ``self`` shifts
+    every argument by one position, causing an immediate TypeError.
+
+    This helper detects the ``self`` first-parameter pattern and wraps the
+    code in a shim::
+
+        class _Solution:
+            <original code, indented>
+
+        def twoSum(*args, **kwargs):
+            return _Solution().twoSum(*args, **kwargs)
+
+    If no ``self`` is detected the code is returned unchanged.
+    """
+    pattern = rf"def\s+{re.escape(function_name)}\s*\(\s*self\s*[,)]"
+    if not re.search(pattern, code):
+        return code  # plain function — nothing to do
+
+    indented = textwrap.indent(code, "    ")
+    shim = (
+        f"class _Solution:\n"
+        f"{indented}\n\n"
+        f"def {function_name}(*args, **kwargs):\n"
+        f"    return _Solution().{function_name}(*args, **kwargs)\n"
+    )
+    return shim
+
+
+# ---------------------------------------------------------------------------
+# Input parser
+# ---------------------------------------------------------------------------
+
+def _extract_param_names(code: str, function_name: str) -> list[str]:
+    """
+    Return the ordered parameter names of *function_name* in *code*,
+    excluding ``self``.
+
+    Returns an empty list if the function cannot be found or the code
+    has a syntax error.
+    """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == function_name:
+            return [a.arg for a in node.args.args if a.arg != "self"]
+    return []
+
+
+def _parse_kv_pairs(input_str: str) -> dict:
+    """
+    Parse a LeetCode-style input string like::
+
+        "nums = [2, 7, 11, 15]    target = 9"
+
+    into a plain Python dict::
+
+        {"nums": [2, 7, 11, 15], "target": 9}
+
+    Values are evaluated with ``ast.literal_eval`` so lists, ints, strings,
+    booleans, and ``None`` are all handled safely.
+    """
+    result: dict = {}
+    # Find every assignment boundary: <identifier> whitespace* =
+    boundaries = list(re.finditer(r"(\w+)\s*=", input_str))
+
+    for idx, match in enumerate(boundaries):
+        key = match.group(1)
+        value_start = match.end()
+        value_end   = boundaries[idx + 1].start() if idx + 1 < len(boundaries) else len(input_str)
+        raw = input_str[value_start:value_end].strip()
+        try:
+            result[key] = ast.literal_eval(raw)
+        except (ValueError, SyntaxError):
+            result[key] = raw   # keep as string if unparseable
+
+    return result
+
+
+def _to_json_args(stdin_data: str, code: str, function_name: str) -> str:
+    """
+    Convert a raw test-case ``input`` string into the JSON array expected by
+    the runner wrapper.
+
+    Handles three formats:
+
+    1. **Already a JSON array** – returned as-is (e.g. ``"[[2,7,11,15], 9]"``).
+    2. **LeetCode key=value pairs** – parsed and reordered by the function
+       signature (e.g. ``"nums = [2,7,11,15]    target = 9"``).
+    3. **Unrecognised / empty** – returned unchanged and let the wrapper
+       handle it (falls back to ``[]`` on blank input).
+    """
+    stripped = stdin_data.strip()
+
+    # --- Fast-path: already valid JSON array ---------------------------------
+    try:
+        parsed = json.loads(stripped)
+        if isinstance(parsed, list):
+            return stripped
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # --- LeetCode key=value format -------------------------------------------
+    kv = _parse_kv_pairs(stripped)
+    if not kv:
+        return stripped  # nothing parseable, pass through
+
+    param_names = _extract_param_names(code, function_name)
+    if param_names:
+        # Order values by function signature; skip params not in input
+        ordered = [kv[p] for p in param_names if p in kv]
+    else:
+        # No signature info — use dict-insertion order (Python 3.7+)
+        ordered = list(kv.values())
+
+    try:
+        return json.dumps(ordered)
+    except (TypeError, ValueError):
+        return stripped  # final fallback
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +336,12 @@ class DockerRunner:
         ExecutionResult with status, stdout, stderr, exit_code, runtime_ms.
         """
         with tempfile.TemporaryDirectory(prefix="gpbl_judge_") as host_tmpdir:
+            # ---- normalise stdin (LeetCode key=value → JSON array) ----------
+            stdin_data = _to_json_args(stdin_data, code, function_name)
+
+            # ---- normalise code (wrap method in class shim if needed) -------
+            code = _prepare_code(code, function_name)
+
             # ---- write solution.py ----------------------------------------
             solution_path = os.path.join(host_tmpdir, "solution.py")
             with open(solution_path, "w", encoding="utf-8") as fh:
