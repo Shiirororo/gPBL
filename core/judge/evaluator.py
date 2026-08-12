@@ -25,16 +25,16 @@ Usage
     # --- Option A: load from Django ORM (requires Django to be set up) ------
     result = evaluator.evaluate(
         challenge_id=1,
-        code='print(int(input()) * 2)',
+        code='def solution(n): return n * 2',
     )
 
     # --- Option B: pass test cases directly (for local dev / unit tests) ----
     tc_list = [
-        TestCaseData(input='3\\n', expected_output='6'),
-        TestCaseData(input='10\\n', expected_output='20'),
+        TestCaseData(input='[3]', expected_output='6'),
+        TestCaseData(input='[10]', expected_output='20'),
     ]
     result = evaluator.evaluate_with_cases(
-        code='print(int(input()) * 2)',
+        code='def solution(n): return n * 2',
         test_cases=tc_list,
     )
 
@@ -196,7 +196,7 @@ class TestCaseEvaluator:
         -------
         EvaluationResult
         """
-        test_cases = self._load_from_db(challenge_id)
+        test_cases, function_name = self._load_from_db(challenge_id)
 
         if not test_cases:
             logger.warning(
@@ -210,12 +210,13 @@ class TestCaseEvaluator:
                 total=0,
             )
 
-        return self.evaluate_with_cases(code=code, test_cases=test_cases)
+        return self.evaluate_with_cases(code=code, test_cases=test_cases, function_name=function_name)
 
     def evaluate_with_cases(
         self,
         code: str,
         test_cases: list[TestCaseData],
+        function_name: str = "solution",
     ) -> EvaluationResult:
         """
         Evaluate *code* against the provided *test_cases* list directly.
@@ -251,6 +252,7 @@ class TestCaseEvaluator:
             exec_result = self._runner.run(
                 code=code,
                 stdin_data=tc.input,
+                function_name=function_name,
             )
 
             # Determine per-case verdict
@@ -290,15 +292,21 @@ class TestCaseEvaluator:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _load_from_db(challenge_id: int) -> list[TestCaseData]:
+    def _load_from_db(challenge_id: int) -> tuple[list[TestCaseData], str]:
         """
-        Fetch all TestCase rows for *challenge_id* from the Django ORM.
+        Fetch all TestCase rows and the function_name for *challenge_id* from the Django ORM.
 
-        Returns an empty list if Django is not configured, the challenge does
-        not exist, or there are no test cases.
+        Returns a tuple of (test_cases, function_name). If Django is not configured, the challenge does
+        not exist, or there are no test cases, returns ([], "solution").
         """
         try:
-            from core.models import TestCase  # noqa: PLC0415 (deferred import)
+            from core.models import CodingChallenge, TestCase  # noqa: PLC0415 (deferred import)
+
+            try:
+                challenge = CodingChallenge.objects.get(pk=challenge_id)
+                function_name = challenge.function_name
+            except CodingChallenge.DoesNotExist:
+                return [], "solution"
 
             qs = (
                 TestCase.objects
@@ -307,7 +315,7 @@ class TestCaseEvaluator:
                 .values("testcase_id", "input", "output", "is_hidden")
             )
 
-            return [
+            test_cases = [
                 TestCaseData(
                     testcase_id=row["testcase_id"],
                     input=row["input"],
@@ -316,7 +324,8 @@ class TestCaseEvaluator:
                 )
                 for row in qs
             ]
+            return test_cases, function_name
 
         except Exception as exc:  # pragma: no cover
             logger.warning("Could not load test cases from DB: %s", exc)
-            return []
+            return [], "solution"

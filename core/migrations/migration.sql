@@ -81,8 +81,8 @@ CREATE TABLE test_cases (
 
     challenge_id BIGINT UNSIGNED NOT NULL,
 
-    input TEXT NOT NULL,
-    output TEXT NOT NULL,
+    input JSON NOT NULL,
+    output JSON NOT NULL,
 
     is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
 

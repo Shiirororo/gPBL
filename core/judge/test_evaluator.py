@@ -65,7 +65,7 @@ def make_evaluator() -> TestCaseEvaluator:
 
 def test_double_number_ac():
     evaluator = make_evaluator()
-    code = "print(int(input()) * 2)"
+    code = "def solution(n): return n * 2"
     result = evaluator.evaluate_with_cases(
         code=code,
         test_cases=SAMPLE_CHALLENGES["double_number"],
@@ -81,7 +81,7 @@ def test_double_number_ac():
 
 def test_double_number_wa():
     evaluator = make_evaluator()
-    code = "print(int(input()) * 3)"  # intentionally wrong
+    code = "def solution(n): return n * 3"  # intentionally wrong
     result = evaluator.evaluate_with_cases(
         code=code,
         test_cases=SAMPLE_CHALLENGES["double_number"],
@@ -97,7 +97,7 @@ def test_double_number_wa():
 
 def test_sum_two_ac():
     evaluator = make_evaluator()
-    code = "a=int(input()); b=int(input()); print(a+b)"
+    code = "def solution(a, b): return a + b"
     result = evaluator.evaluate_with_cases(
         code=code,
         test_cases=SAMPLE_CHALLENGES["sum_two"],
@@ -115,7 +115,7 @@ def test_sum_two_ac():
 
 def test_reverse_string_ac():
     evaluator = make_evaluator()
-    code = "print(input()[::-1])"
+    code = "def solution(s): return s[::-1]"
     result = evaluator.evaluate_with_cases(
         code=code,
         test_cases=SAMPLE_CHALLENGES["reverse_string"],
@@ -133,7 +133,7 @@ def test_factorial_ac():
     evaluator = make_evaluator()
     code = (
         "import math\n"
-        "print(math.factorial(int(input())))\n"
+        "def solution(n): return math.factorial(n)\n"
     )
     result = evaluator.evaluate_with_cases(
         code=code,
@@ -152,7 +152,7 @@ def test_factorial_ac():
 
 def test_re_propagation():
     evaluator = make_evaluator()
-    code = "raise RuntimeError('crash')"
+    code = "def solution(n): raise RuntimeError('crash')"
     result = evaluator.evaluate_with_cases(
         code=code,
         test_cases=SAMPLE_CHALLENGES["double_number"],
@@ -168,7 +168,7 @@ def test_re_propagation():
 def test_tle_propagation():
     cfg       = RunnerConfig(timeout_sec=3)
     evaluator = TestCaseEvaluator(runner_config=cfg)
-    code      = "while True: pass"
+    code      = "def solution(n):\n    while True: pass"
     result    = evaluator.evaluate_with_cases(
         code=code,
         test_cases=SAMPLE_CHALLENGES["double_number"][:1],  # only 1 tc to save time
@@ -183,7 +183,7 @@ def test_tle_propagation():
 
 def test_empty_test_cases():
     evaluator = make_evaluator()
-    result = evaluator.evaluate_with_cases(code="print(1)", test_cases=[])
+    result = evaluator.evaluate_with_cases(code="def solution(n): return 1", test_cases=[])
     if result.total == 0 and result.passed == 0 and result.status == ExecutionStatus.ACCEPTED:
         _ok("empty test cases — returns AC with 0/0")
     else:
