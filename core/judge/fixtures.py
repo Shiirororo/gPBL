@@ -30,11 +30,11 @@ from .evaluator import TestCaseData
 # Read one integer from stdin, print it doubled.
 # ---------------------------------------------------------------------------
 DOUBLE_NUMBER: list[TestCaseData] = [
-    TestCaseData(input="0\n",    expected_output="0"),
-    TestCaseData(input="1\n",    expected_output="2"),
-    TestCaseData(input="21\n",   expected_output="42"),
-    TestCaseData(input="-5\n",   expected_output="-10"),
-    TestCaseData(input="1000\n", expected_output="2000", is_hidden=True),
+    TestCaseData(input="[0]",    expected_output="0"),
+    TestCaseData(input="[1]",    expected_output="2"),
+    TestCaseData(input="[21]",   expected_output="42"),
+    TestCaseData(input="[-5]",   expected_output="-10"),
+    TestCaseData(input="[1000]", expected_output="2000", is_hidden=True),
 ]
 
 # ---------------------------------------------------------------------------
@@ -42,10 +42,10 @@ DOUBLE_NUMBER: list[TestCaseData] = [
 # Read two integers (one per line), print their sum.
 # ---------------------------------------------------------------------------
 SUM_TWO: list[TestCaseData] = [
-    TestCaseData(input="1\n2\n",     expected_output="3"),
-    TestCaseData(input="0\n0\n",     expected_output="0"),
-    TestCaseData(input="-3\n3\n",    expected_output="0"),
-    TestCaseData(input="100\n200\n", expected_output="300", is_hidden=True),
+    TestCaseData(input="[1, 2]",     expected_output="3"),
+    TestCaseData(input="[0, 0]",     expected_output="0"),
+    TestCaseData(input="[-3, 3]",    expected_output="0"),
+    TestCaseData(input="[100, 200]", expected_output="300", is_hidden=True),
 ]
 
 # ---------------------------------------------------------------------------
@@ -60,8 +60,8 @@ _FIZZBUZZ_EXPECTED_15 = "\n".join(
 )
 
 FIZZBUZZ: list[TestCaseData] = [
-    TestCaseData(input="5\n",  expected_output="1\n2\nFizz\n4\nBuzz"),
-    TestCaseData(input="15\n", expected_output=_FIZZBUZZ_EXPECTED_15, is_hidden=True),
+    TestCaseData(input="[5]",  expected_output="1\n2\nFizz\n4\nBuzz"),
+    TestCaseData(input="[15]", expected_output=_FIZZBUZZ_EXPECTED_15, is_hidden=True),
 ]
 
 # ---------------------------------------------------------------------------
@@ -69,10 +69,10 @@ FIZZBUZZ: list[TestCaseData] = [
 # Read one line, print it reversed.
 # ---------------------------------------------------------------------------
 REVERSE_STRING: list[TestCaseData] = [
-    TestCaseData(input="hello\n",  expected_output="olleh"),
-    TestCaseData(input="abc\n",    expected_output="cba"),
-    TestCaseData(input="racecar\n", expected_output="racecar"),
-    TestCaseData(input="OpenAI\n",  expected_output="IAnepO", is_hidden=True),
+    TestCaseData(input='["hello"]',  expected_output="olleh"),
+    TestCaseData(input='["abc"]',    expected_output="cba"),
+    TestCaseData(input='["racecar"]', expected_output="racecar"),
+    TestCaseData(input='["OpenAI"]',  expected_output="IAnepO", is_hidden=True),
 ]
 
 # ---------------------------------------------------------------------------
@@ -82,11 +82,11 @@ REVERSE_STRING: list[TestCaseData] = [
 import math  # noqa: E402
 
 FACTORIAL: list[TestCaseData] = [
-    TestCaseData(input="0\n",  expected_output="1"),
-    TestCaseData(input="1\n",  expected_output="1"),
-    TestCaseData(input="5\n",  expected_output="120"),
-    TestCaseData(input="10\n", expected_output=str(math.factorial(10))),
-    TestCaseData(input="12\n", expected_output=str(math.factorial(12)), is_hidden=True),
+    TestCaseData(input="[0]",  expected_output="1"),
+    TestCaseData(input="[1]",  expected_output="1"),
+    TestCaseData(input="[5]",  expected_output="120"),
+    TestCaseData(input="[10]", expected_output=str(math.factorial(10))),
+    TestCaseData(input="[12]", expected_output=str(math.factorial(12)), is_hidden=True),
 ]
 
 # ---------------------------------------------------------------------------

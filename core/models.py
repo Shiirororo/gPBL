@@ -69,6 +69,7 @@ class CodingChallenge(models.Model):
     categories = models.JSONField(null=True, blank=True)
     learning_status = models.CharField(max_length=50, null=True, blank=True)
     example_of_correct_code = models.TextField(null=True, blank=True)
+    function_name = models.CharField(max_length=100, default='solution')
     acceptance_rate = models.DecimalField(
         max_digits=5,
         decimal_places=2,
