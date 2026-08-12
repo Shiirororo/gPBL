@@ -97,8 +97,8 @@ class TestCase(models.Model):
         related_name='test_cases'
     )
 
-    input = models.TextField()
-    output = models.TextField()
+    input = models.JSONField()
+    output = models.JSONField()
     is_hidden = models.BooleanField(default=False)
 
     class Meta:

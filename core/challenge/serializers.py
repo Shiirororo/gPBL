@@ -1,7 +1,15 @@
+import json
+
 from rest_framework import serializers
 from core.models import CodingChallenge
 
+
 class CodingChallengeSerializer(serializers.ModelSerializer):
+    # MySQL may return JSONField values as a raw JSON string when rows were
+    # inserted via raw SQL rather than the ORM. This field normalises the value
+    # to always be a list so the frontend never receives a bare string.
+    categories = serializers.SerializerMethodField()
+
     class Meta:
         model = CodingChallenge
         fields = [
@@ -15,12 +23,26 @@ class CodingChallengeSerializer(serializers.ModelSerializer):
             "categories",
             "learning_status",
             "example_of_correct_code",
-            "acceptance_rate"
+            "acceptance_rate",
         ]
-        read_only_fields = ['challenge_id']
-    
+        read_only_fields = ["challenge_id"]
+
+    def get_categories(self, obj) -> list:
+        """Return categories as a list, parsing JSON strings if necessary."""
+        value = obj.categories
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, ValueError):
+                return []
+        return []
+
     def validate_title(self, value):
         if CodingChallenge.objects.filter(title=value).exists():
             raise serializers.ValidationError("Challenge với title này đã tồn tại")
         return value
-        
