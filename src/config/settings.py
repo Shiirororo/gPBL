@@ -92,7 +92,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'app_db'),
         'USER': os.getenv('DB_USER', 'gpbl'),
         'PASSWORD': os.getenv('DB_PASSWORD', '123456'),
-        'HOST': os.getenv('DB_HOST', '3.1.85.139'),
+        'HOST': os.getenv('DB_HOST', '52.221.194.109'),
         'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
