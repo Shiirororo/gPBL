@@ -43,6 +43,7 @@ Usage
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 
@@ -113,15 +114,36 @@ class EvaluationResult:
 # Output comparison
 # ---------------------------------------------------------------------------
 
-def _normalise(text: str) -> str:
+def _normalise(text) -> str:
     """
     Normalise output for comparison.
 
+    Accepts strings *or* any JSON-serialisable Python object (list, int, …)
+    because the DB ``output`` column is a JSONField and Django returns the
+    already-deserialised value.
+
     Rules (mirrors competitive-programming judge conventions):
+    - Non-string values are first serialised to compact JSON.
+    - If the value *is* a string but happens to be valid JSON (e.g. the
+      runner printed ``[0, 1]``), it is re-parsed and re-serialised with
+      compact separators so that ``[0, 1]`` and ``[0,1]`` compare equal.
     - Strip leading/trailing whitespace from the whole output.
     - Strip trailing whitespace from every line.
     - Collapse CR+LF → LF.
     """
+    if not isinstance(text, str):
+        # Already a Python object from a JSONField — serialise canonically.
+        text = json.dumps(text, separators=(",", ":"))
+    else:
+        # Try to re-serialise if the string is valid JSON so that whitespace
+        # differences like "[0, 1]" vs "[0,1]" are eliminated.
+        stripped = text.strip()
+        try:
+            parsed = json.loads(stripped)
+            text = json.dumps(parsed, separators=(",", ":"))
+        except (json.JSONDecodeError, ValueError):
+            pass  # plain text output — leave as-is
+
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     lines = [line.rstrip() for line in text.splitlines()]
     return "\n".join(lines).strip()
@@ -318,8 +340,16 @@ class TestCaseEvaluator:
             test_cases = [
                 TestCaseData(
                     testcase_id=row["testcase_id"],
-                    input=row["input"],
-                    expected_output=row["output"],
+                    input=(
+                        row["input"]
+                        if isinstance(row["input"], str)
+                        else json.dumps(row["input"])
+                    ),
+                    expected_output=(
+                        row["output"]
+                        if isinstance(row["output"], str)
+                        else json.dumps(row["output"], separators=(",", ":"))
+                    ),
                     is_hidden=row["is_hidden"],
                 )
                 for row in qs
