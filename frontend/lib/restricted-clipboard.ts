@@ -7,6 +7,10 @@ export interface InternalClipboardData {
   copiedAt: number;
 }
 
+function normalizeClipboardText(text: string): string {
+  return text.replace(/\r\n/g, "\n");
+}
+
 export function createInternalClipboard(
   text: string,
   challengeId: number,
@@ -18,6 +22,7 @@ export function createInternalClipboard(
 
 export function canPasteInternalClipboard(
   clipboard: InternalClipboardData | null,
+  pastedText: string,
   challengeId: number | undefined,
   now = Date.now(),
 ): clipboard is InternalClipboardData {
@@ -26,5 +31,6 @@ export function canPasteInternalClipboard(
   const age = now - clipboard.copiedAt;
   return clipboard.challengeId === challengeId
     && age >= 0
-    && age <= INTERNAL_CLIPBOARD_TTL_MS;
+    && age <= INTERNAL_CLIPBOARD_TTL_MS
+    && normalizeClipboardText(clipboard.text) === normalizeClipboardText(pastedText);
 }

@@ -75,12 +75,16 @@ export default function CodingEditor({ className }: { className?: string }) {
     const handleCopy = () => saveSelection("copy");
     const handleCut = () => saveSelection("cut");
     const handlePaste = (event: ClipboardEvent) => {
+      if (!editor.hasTextFocus()) return;
+
       event.preventDefault();
       event.stopImmediatePropagation();
 
       const internalClipboard = internalClipboardRef.current;
+      const pastedText = event.clipboardData?.getData("text/plain") ?? "";
       if (!canPasteInternalClipboard(
         internalClipboard,
+        pastedText,
         challengeIdRef.current,
       )) {
         return;
@@ -103,12 +107,12 @@ export default function CodingEditor({ className }: { className?: string }) {
     };
     domNode.addEventListener("copy", handleCopy, true);
     domNode.addEventListener("cut", handleCut, true);
-    domNode.addEventListener("paste", handlePaste, true);
+    domNode.ownerDocument.addEventListener("paste", handlePaste, true);
 
     removeClipboardListenersRef.current = () => {
       domNode.removeEventListener("copy", handleCopy, true);
       domNode.removeEventListener("cut", handleCut, true);
-      domNode.removeEventListener("paste", handlePaste, true);
+      domNode.ownerDocument.removeEventListener("paste", handlePaste, true);
       removeClipboardListenersRef.current = null;
     };
   }, []);
