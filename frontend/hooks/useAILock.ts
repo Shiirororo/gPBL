@@ -157,11 +157,15 @@ export function useAILock(challengeId?: number) {
 export function useChallengeStart(challengeId?: number) {
   const { startChallenge, isLoading, error } = useAILock(challengeId)
   const [hasAttemptedStart, setHasAttemptedStart] = useState(false)
+  const [hasStartedInSession, setHasStartedInSession] = useState(false)
 
   // Check if we've already started this challenge in this session
   const sessionKey = `challenge_started_${challengeId}`
-  const hasStartedInSession = typeof window !== 'undefined' && 
-    sessionStorage.getItem(sessionKey) === 'true'
+
+  // Read sessionStorage only after hydration to avoid SSR/client mismatch
+  useEffect(() => {
+    setHasStartedInSession(sessionStorage.getItem(sessionKey) === 'true')
+  }, [sessionKey])
 
   const handleStartChallenge = useCallback(async () => {
     if (!challengeId || hasAttemptedStart || hasStartedInSession) return false
@@ -171,9 +175,8 @@ export function useChallengeStart(challengeId?: number) {
     try {
       await startChallenge(challengeId)
       // Mark as started in session storage
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(sessionKey, 'true')
-      }
+      sessionStorage.setItem(sessionKey, 'true')
+      setHasStartedInSession(true)
       return true
     } catch (err) {
       // Don't throw errors for authentication issues - just log and continue
