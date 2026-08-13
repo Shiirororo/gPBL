@@ -15,16 +15,22 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/logout", { method: "POST" });
-      if (res.ok) {
+      // The logout endpoint returns a redirect, which fetch will follow
+      const res = await fetch("/api/auth/logout", { 
+        method: "POST",
+        redirect: "manual" // Don't follow redirect automatically
+      });
+      
+      if (res.ok || res.type === "opaqueredirect" || res.status === 0) {
         toast("Logged out", "success");
-        router.push("/auth/login");
+        // Force full page navigation to login
+        window.location.href = "/auth/login";
       } else {
         toast("Failed to log out", "error");
+        setLoading(false);
       }
     } catch {
       toast("Failed to log out", "error");
-    } finally {
       setLoading(false);
     }
   };
