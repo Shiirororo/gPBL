@@ -31,7 +31,7 @@ DEBUG = True
 
 #CORS
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Allow all hosts for development
 
 
 # Application definition
@@ -82,23 +82,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DATABASE_NAME'),
-        'USER': os.getenv('DATABASE_USER'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST': os.getenv('DATABASE_HOST'),
-        'PORT': os.getenv('DATABASE_PORT'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.getenv('DATABASE_NAME'),
+#         'USER': os.getenv('DATABASE_USER'),
+#         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+#         'HOST': os.getenv('DATABASE_HOST'),
+#         'PORT': os.getenv('DATABASE_PORT'),
+#     }
+# }
 #or os.getenv('DATABASE_HOST', '18.141.225.191')
 
 # Sample credential
@@ -163,6 +163,12 @@ MAILERS = {
 
 # AI Lock Configuration
 AI_LOCK_DURATION_MINUTES = int(os.environ.get('AI_LOCK_DURATION_MINUTES', 10))
+
+# Assessment Configuration
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+ASSESSMENT_QUESTION_COUNT = int(os.environ.get('ASSESSMENT_QUESTION_COUNT', 6))
+OPENAI_ASSESSMENT_MODEL = os.environ.get('OPENAI_ASSESSMENT_MODEL', 'gpt-4')
+ASSESSMENT_ENABLED = os.environ.get('ASSESSMENT_ENABLED', 'True').lower() == 'true'
 
 # Logging Configuration
 LOGGING = {

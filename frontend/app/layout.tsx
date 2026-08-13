@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ToastProvider } from "@/components/ui/toast-provider";
 import { UserProvider } from "@/providers/UserProvider";
+import { AssessmentGate } from "@/components/AssessmentGate";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["vietnamese", "latin"], // Hỗ trợ đầy đủ ký tự tiếng Việt.
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <ToastProvider>
             <UserProvider>
-              <main>{children}</main>
+              <AssessmentGate>
+                <main>{children}</main>
+              </AssessmentGate>
             </UserProvider>
           </ToastProvider>
         </ThemeProvider>

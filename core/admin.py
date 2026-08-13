@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     User, CodingChallenge, TestCase, UserCompletedChallenge,
     Result, AiQuestion, AIConversation, AIExchange,
-    FeatureLock, ChallengeSession
+    FeatureLock, ChallengeSession, CodeAssessment
 )
 
 
@@ -39,6 +39,22 @@ class ChallengeSessionAdmin(admin.ModelAdmin):
     list_filter = ['status', 'started_at', 'ended_at']
     search_fields = ['user__user_name', 'challenge__title']
     readonly_fields = ['started_at']
+
+
+@admin.register(CodeAssessment)
+class CodeAssessmentAdmin(admin.ModelAdmin):
+    list_display = ['assessment_id', 'result_user', 'result_challenge', 'status', 'ai_score', 'created_at', 'completed_at']
+    list_filter = ['status', 'created_at', 'completed_at']
+    search_fields = ['result__user__user_name', 'result__challenge__title']
+    readonly_fields = ['created_at', 'started_at', 'completed_at']
+    
+    def result_user(self, obj):
+        return obj.result.user.user_name
+    result_user.short_description = 'User'
+    
+    def result_challenge(self, obj):
+        return obj.result.challenge.title
+    result_challenge.short_description = 'Challenge'
 
 
 # Register other models with basic admin
