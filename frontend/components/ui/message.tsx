@@ -1,8 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { UserIcon, RobotIcon, CopyIcon, CheckIcon } from "@phosphor-icons/react"
+import { UserIcon, RobotIcon } from "@phosphor-icons/react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
+import { shouldRenderMarkdown } from "@/lib/message-content"
 import { cn } from "@/lib/utils"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -55,36 +58,41 @@ function MessageAvatar({ role }: { role: MessageRole }) {
   )
 }
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = React.useState(false)
-
-  const handleCopy = React.useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      // clipboard unavailable
-    }
-  }, [text])
-
+function MarkdownContent({ content }: { content: string }) {
   return (
-    <button
-      aria-label="Copy message"
-      onClick={handleCopy}
+    <div
       className={cn(
-        "flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-all duration-150",
-        "opacity-0 group-hover/message:opacity-100 focus-visible:opacity-100",
-        "hover:bg-muted hover:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/50"
+        "min-w-0 break-words",
+        "[&_p:not(:last-child)]:mb-2",
+        "[&_h1]:mb-2 [&_h1]:text-lg [&_h1]:font-bold",
+        "[&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-bold",
+        "[&_h3]:mb-1 [&_h3]:font-semibold",
+        "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5",
+        "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5",
+        "[&_li]:my-1",
+        "[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground",
+        "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs",
+        "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted/70 [&_pre]:p-3",
+        "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+        "[&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:p-2 [&_th]:text-left",
+        "[&_td]:border [&_td]:border-border [&_td]:p-2",
+        "[&_a]:text-violet-500 [&_a]:underline [&_a]:underline-offset-2",
+        "[&_hr]:my-3 [&_hr]:border-border",
       )}
     >
-      {copied ? (
-        <CheckIcon weight="bold" className="size-3 text-green-500 dark:text-green-400" />
-      ) : (
-        <CopyIcon weight="bold" className="size-3" />
-      )}
-    </button>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a: ({ children, href }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   )
 }
 
@@ -146,21 +154,13 @@ function Message({
           )}
         >
           {displayContent ? (
-            <p className="whitespace-pre-wrap break-words">{displayContent}</p>
+            shouldRenderMarkdown(role) ? (
+              <MarkdownContent content={displayContent} />
+            ) : (
+              <p className="whitespace-pre-wrap break-words">{displayContent}</p>
+            )
           ) : (
             children
-          )}
-
-          {/* Copy button — appears on hover */}
-          {displayContent && (
-            <div
-              className={cn(
-                "absolute -top-3 flex items-center gap-1",
-                isUser ? "left-1" : "right-1"
-              )}
-            >
-              <CopyButton text={displayContent} />
-            </div>
           )}
         </div>
       </div>

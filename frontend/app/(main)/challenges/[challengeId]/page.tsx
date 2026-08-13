@@ -16,7 +16,7 @@ export default async function ChallengePage({ params }: ChallengePageProps) {
   const parsedChallengeId = Number(challengeId);
 
   return (
-    <ChallengeWorkspaceProvider>
+    <ChallengeWorkspaceProvider key={parsedChallengeId}>
       <ChallengeWorkspace challengeId={parsedChallengeId} />
     </ChallengeWorkspaceProvider>
   );

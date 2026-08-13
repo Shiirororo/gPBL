@@ -15,7 +15,7 @@ interface AILockStatusProps {
 }
 
 export function AILockStatus({ challengeId, className = "", showWhenUnlocked = false }: AILockStatusProps) {
-  const { isAILocked, formattedTime, lockMessage, error, checkLockStatus } = useAILock(challengeId)
+  const { isAILocked, formattedTime, error, checkLockStatus } = useAILock()
   const { startChallenge, isStarting, hasStarted } = useChallengeStart(challengeId)
 
   // Refresh status when component mounts
@@ -142,8 +142,8 @@ interface AILockIndicatorProps {
   className?: string
 }
 
-export function AILockIndicator({ challengeId, className = "" }: AILockIndicatorProps) {
-  const { isAILocked, formattedTime } = useAILock(challengeId)
+export function AILockIndicator({ className = "" }: AILockIndicatorProps) {
+  const { isAILocked, formattedTime } = useAILock()
 
   if (!isAILocked) return null
 

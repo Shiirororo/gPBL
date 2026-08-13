@@ -49,10 +49,13 @@ class ConversationService:
             conversation_id=conversation_id,
         )
 
-    def autosave(self, *, user, conversation_id, code, expected_revision):
+    def autosave(
+        self, *, user, conversation_id, challenge_id, code, expected_revision
+    ):
         conversation = self.repository.autosave(
             user=user,
             conversation_id=conversation_id,
+            challenge_id=challenge_id,
             code=code,
             expected_revision=expected_revision,
         )
@@ -69,6 +72,7 @@ class ConversationService:
         *,
         user,
         conversation_id,
+        challenge_id,
         question,
         code,
         request_id,
@@ -77,6 +81,7 @@ class ConversationService:
         existing = self._find_existing_request(
             user=user,
             conversation_id=conversation_id,
+            challenge_id=challenge_id,
             request_id=request_id,
         )
         if existing is not None:
@@ -85,6 +90,7 @@ class ConversationService:
         exchange, description, history = self._prepare_exchange(
             user=user,
             conversation_id=conversation_id,
+            challenge_id=challenge_id,
             question=question,
             code=code,
             request_id=request_id,
@@ -168,10 +174,13 @@ class ConversationService:
             conversation.refresh_from_db()
         return conversation
 
-    def _find_existing_request(self, *, user, conversation_id, request_id):
+    def _find_existing_request(
+        self, *, user, conversation_id, challenge_id, request_id
+    ):
         conversation = self.repository.get_for_user(
             user=user,
             conversation_id=conversation_id,
+            challenge_id=challenge_id,
         )
         return self.repository.get_exchange_by_request_id(
             conversation=conversation,
@@ -192,6 +201,7 @@ class ConversationService:
         *,
         user,
         conversation_id,
+        challenge_id,
         question,
         code,
         request_id,
@@ -202,6 +212,7 @@ class ConversationService:
                 conversation = self.repository.get_for_user(
                     user=user,
                     conversation_id=conversation_id,
+                    challenge_id=challenge_id,
                     for_update=True,
                 )
                 if conversation.status != "active":
@@ -290,21 +301,32 @@ def get_conversation(*, user, conversation_id):
     )
 
 
-def save_draft(*, user, conversation_id, code, expected_revision):
+def save_draft(
+    *, user, conversation_id, challenge_id, code, expected_revision
+):
     return ConversationService().save_draft(
         user=user,
         conversation_id=conversation_id,
+        challenge_id=challenge_id,
         code=code,
         expected_revision=expected_revision,
     )
 
 
 def send_message(
-    *, user, conversation_id, question, code, request_id, expected_revision
+    *,
+    user,
+    conversation_id,
+    challenge_id,
+    question,
+    code,
+    request_id,
+    expected_revision,
 ):
     return ConversationService().send_message(
         user=user,
         conversation_id=conversation_id,
+        challenge_id=challenge_id,
         question=question,
         code=code,
         request_id=request_id,
