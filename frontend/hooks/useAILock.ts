@@ -69,7 +69,7 @@ export function useAILock(challengeId?: number) {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/challenges/challenge/${challengeId}/start/`, {
+      const response = await fetch(`/api/challenges/${challengeId}/start/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

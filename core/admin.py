@@ -1,9 +1,4 @@
 from django.contrib import admin
-from .models import CodingChallenge, TestCase
-
-# Register your models here.
-admin.site.register(CodingChallenge)
-admin.site.register(TestCase)
 from .models import (
     User, CodingChallenge, TestCase, UserCompletedChallenge,
     Result, AiQuestion, AIConversation, AIExchange,
