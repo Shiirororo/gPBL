@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { SubmissionApiError, submitCode } from "@/features/submissions/api";
 import type { SubmissionResult } from "@/features/submissions/types";
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface SubmitArguments {
   challengeId: number;
@@ -13,6 +14,7 @@ interface SubmitArguments {
 
 export function useSubmission() {
   const workspace = useChallengeWorkspace();
+  const { refreshCurrentUser } = useCurrentUser();
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +45,7 @@ export function useSubmission() {
       const nextResult = await submitCode(resolvedInput);
       setResult(nextResult);
       workspace.setSubmissionResult(nextResult);
+      if (nextResult.status === "AC") void refreshCurrentUser();
       return nextResult;
     } catch (cause) {
       const message = cause instanceof SubmissionApiError
@@ -53,7 +56,7 @@ export function useSubmission() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [workspace]);
+  }, [workspace, refreshCurrentUser]);
 
   const clearResult = useCallback(() => {
     setResult(null);

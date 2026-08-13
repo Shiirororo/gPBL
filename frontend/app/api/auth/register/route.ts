@@ -44,9 +44,21 @@ export async function POST(request: Request): Promise<NextResponse> {
       )
     }
 
+    const profileResponse = await fetch(`${getBackendUrl()}/api/user/me/`, {
+      headers: { Authorization: `Bearer ${tokens.access}` },
+      cache: "no-store",
+    })
+    const profile = await readResponseBody(profileResponse)
+    if (!profileResponse.ok) {
+      return NextResponse.json(
+        { authenticated: false, user, message: "The account was created, but its profile could not be loaded." },
+        { status: 201 },
+      )
+    }
+
     await setAuthCookies(tokens.access, tokens.refresh)
     return NextResponse.json(
-      { authenticated: true, user },
+      { authenticated: true, user: profile },
       { status: 201 },
     )
   } catch (error) {

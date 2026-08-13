@@ -25,6 +25,7 @@ import {
 } from "./ui/dialog";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function LoginForm({
   className,
@@ -39,6 +40,7 @@ export function LoginForm({
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
   const router = useRouter();
+  const { setCurrentUser } = useCurrentUser();
 
   useEffect(() => {
     if (!error) return;
@@ -79,7 +81,11 @@ export function LoginForm({
       if (!response.ok) {
         throw new Error(data.message || "Something went wrong!");
       }
+      if (!data.user) {
+        throw new Error("The server did not return the user profile.");
+      }
 
+      setCurrentUser(data.user);
       router.push("/challenges");
       router.refresh();
     } catch (err: unknown) {
@@ -116,7 +122,11 @@ export function LoginForm({
       if (!response.ok || !data.authenticated) {
         throw new Error(data.message || "Failed to create account.");
       }
+      if (!data.user) {
+        throw new Error("The server did not return the user profile.");
+      }
 
+      setCurrentUser(data.user);
       router.push("/challenges");
       router.refresh();
     } catch (err: unknown) {
