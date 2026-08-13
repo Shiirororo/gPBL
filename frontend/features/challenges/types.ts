@@ -12,6 +12,9 @@ export interface Challenge {
   learning_status: string | null;
   example_of_correct_code: string | null;
   acceptance_rate: string;
+  passed_testcases: number;
+  total_testcases: number;
+  completion_rate: number;
 }
 
 export interface ChallengeApiError {

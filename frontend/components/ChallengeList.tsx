@@ -127,7 +127,7 @@ export default function ChallengeList() {
                     </Badge>
                   ))}
                   <span className="ml-auto shrink-0 text-[10px] text-muted-foreground/60">
-                    {challenge.acceptance_rate}% acceptance
+                    {Number(challenge.completion_rate ?? 0).toFixed(2)}% completed
                   </span>
                 </div>
               </div>

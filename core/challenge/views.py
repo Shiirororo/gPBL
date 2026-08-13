@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Count, Max, Q, Value
+from django.db.models.functions import Coalesce
 
 from core.models import CodingChallenge, ChallengeSession
 from core.ai.lock_service import LockService
@@ -15,17 +17,32 @@ class ChallengeDetailView(APIView):
     View to retrieve a challenge by its ID.
     """
 
+    permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def _challenges_for_user(user):
+        return CodingChallenge.objects.annotate(
+            total_testcases=Count('test_cases', distinct=True),
+            user_passed_testcases=Coalesce(
+                Max(
+                    'results__passed_testcases',
+                    filter=Q(results__user=user),
+                ),
+                Value(0),
+            ),
+        )
+
     def get(self, request, challenge_id=None):
         """
         Retrieve all challenges or one challenge by its ID.
         """
         if challenge_id is None:
-            challenges = CodingChallenge.objects.all().order_by('challenge_id')
+            challenges = self._challenges_for_user(request.user).order_by('challenge_id')
             serializer = CodingChallengeSerializer(challenges, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         try:
-            challenge = CodingChallenge.objects.get(challenge_id=challenge_id)
+            challenge = self._challenges_for_user(request.user).get(challenge_id=challenge_id)
             serializer = CodingChallengeSerializer(challenge)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except CodingChallenge.DoesNotExist:
