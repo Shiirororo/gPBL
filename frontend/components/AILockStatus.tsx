@@ -31,7 +31,7 @@ export function AILockStatus({ challengeId, className = "", showWhenUnlocked = f
 
   if (error) {
     return (
-      <div className={`p-3 bg-red-50 border border-red-200 rounded-md ${className}`}>
+      <div className={`p-3 bg-red-50 border border-red-200 rounded-md cursor-default select-none ${className}`}>
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -52,7 +52,7 @@ export function AILockStatus({ challengeId, className = "", showWhenUnlocked = f
   // Show start button if not locked and not started yet (and user is likely authenticated)
   if (!isAILocked && !hasStarted && !error?.includes('authentication')) {
     return (
-      <div className={`p-3 bg-blue-50 border border-blue-200 rounded-md ${className}`}>
+      <div className={`p-3 bg-blue-50 border border-blue-200 rounded-md cursor-default select-none ${className}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -71,7 +71,7 @@ export function AILockStatus({ challengeId, className = "", showWhenUnlocked = f
             <button
               onClick={handleStartChallenge}
               disabled={isStarting}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="inline-flex cursor-pointer items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isStarting && (
                 <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -89,7 +89,7 @@ export function AILockStatus({ challengeId, className = "", showWhenUnlocked = f
 
   if (isAILocked) {
     return (
-      <div className={`p-3 bg-yellow-50 border border-yellow-200 rounded-md ${className}`}>
+      <div className={`p-3 bg-yellow-50 border border-yellow-200 rounded-md cursor-default select-none ${className}`}>
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
@@ -112,7 +112,7 @@ export function AILockStatus({ challengeId, className = "", showWhenUnlocked = f
 
   if (showWhenUnlocked) {
     return (
-      <div className={`p-3 bg-green-50 border border-green-200 rounded-md ${className}`}>
+      <div className={`p-3 bg-green-50 border border-green-200 rounded-md cursor-default select-none ${className}`}>
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -148,7 +148,7 @@ export function AILockIndicator({ className = "" }: AILockIndicatorProps) {
   if (!isAILocked) return null
 
   return (
-    <div className={`inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-md ${className}`}>
+    <div className={`inline-flex cursor-default select-none items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-md ${className}`}>
       <svg className="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
       </svg>
