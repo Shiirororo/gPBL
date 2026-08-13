@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/resizable"
 import { getChallenge } from "@/features/challenges/api"
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace"
+import { useChallengeStart } from "@/hooks/useAILock"
 import { AIConversationProvider } from "@/providers/AIConversationProvider"
+import { AILockStatus } from "@/components/AILockStatus"
 
 export default function ChallengeWorkspace({ challengeId }: { challengeId: number }) {
   const { setChallenge, setChallengeError, setLoading } = useChallengeWorkspace()
@@ -23,6 +25,7 @@ export default function ChallengeWorkspace({ challengeId }: { challengeId: numbe
     setLoading(true)
     setChallengeError(null)
 
+    // Load challenge data only - don't auto-start session
     void getChallenge(challengeId, controller.signal)
       .then(setChallenge)
       .catch((cause: unknown) => {
@@ -37,6 +40,11 @@ export default function ChallengeWorkspace({ challengeId }: { challengeId: numbe
   return (
     <AIConversationProvider>
       <div className="relative h-[calc(100vh-3rem)] bg-zinc-100 p-2 dark:bg-zinc-900">
+        {/* AI Lock Status Banner */}
+        <div className="mb-2">
+          <AILockStatus challengeId={challengeId} />
+        </div>
+        
         <ChatBoxDrawer />
         <ResizablePanelGroup orientation="horizontal" className="h-full rounded-xl">
           <ResizablePanel defaultSize="42%" minSize="28%" maxSize="60%">

@@ -12,11 +12,11 @@ const NAV_LINKS = [
     label: "Challenges",
     icon: SquaresFour,
   },
-  {
-    href: "/leaderboard",
-    label: "Leaderboard",
-    icon: Trophy,
-  },
+  // {
+  //   href: "/leaderboard",
+  //   label: "Leaderboard",
+  //   icon: Trophy,
+  // },
   {
     href: "/profile",
     label: "Profile",

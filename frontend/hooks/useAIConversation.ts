@@ -6,6 +6,7 @@ import { aiAPI, AIAPIError } from "@/features/ai/api"
 import type { AIConversationDetail, ConversationStatus } from "@/features/ai/types"
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace"
 import type { AIMessage } from "@/providers/ChallengeWorkspaceProvider"
+import { generateId } from "@/utils/id"
 
 function messagesFrom(detail: AIConversationDetail): AIMessage[] {
   return detail.exchanges.flatMap((exchange) => {
@@ -63,7 +64,13 @@ export function useAIConversation() {
         setCurrentCode(created.current_code || starterCode)
       }
     } catch (error) {
-      if (isCurrent()) setAIError(error instanceof Error ? error.message : "Unable to open the AI conversation.")
+      if (isCurrent()) {
+        if (error instanceof AIAPIError && error.isAILocked) {
+          setAIError("AI assistance is currently locked. Please try solving the challenge on your own first.")
+        } else {
+          setAIError(error instanceof Error ? error.message : "Unable to open the AI conversation.")
+        }
+      }
     } finally {
       if (isCurrent()) setIsInitializing(false)
     }
@@ -90,7 +97,7 @@ export function useAIConversation() {
     const request = samePayload
       ? previousRequest
       : {
-          id: crypto.randomUUID(),
+          id: generateId(),
           conversationId,
           question: trimmed,
           code: currentCode,
@@ -111,7 +118,15 @@ export function useAIConversation() {
         await loadDetail(conversationId, false).catch(() => undefined)
       }
       if (error instanceof AIAPIError && error.code === "ai_unavailable") requestRef.current = null
-      setAIError(error instanceof Error ? error.message : "Unable to send the message.")
+      
+      // Handle AI lock error specifically
+      if (error instanceof AIAPIError && error.isAILocked) {
+        setAIError("AI assistance is currently locked. Please try solving the challenge on your own first.")
+        requestRef.current = null
+      } else {
+        setAIError(error instanceof Error ? error.message : "Unable to send the message.")
+      }
+      
       return false
     } finally {
       setIsSending(false)

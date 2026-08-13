@@ -1,7 +1,7 @@
 import json
 
 from rest_framework import serializers
-from core.models import CodingChallenge
+from core.models import CodingChallenge, ChallengeSession
 
 
 class CodingChallengeSerializer(serializers.ModelSerializer):
@@ -46,3 +46,16 @@ class CodingChallengeSerializer(serializers.ModelSerializer):
         if CodingChallenge.objects.filter(title=value).exists():
             raise serializers.ValidationError("Challenge với title này đã tồn tại")
         return value
+
+
+class ChallengeSessionSerializer(serializers.ModelSerializer):
+    challenge_title = serializers.CharField(source='challenge.title', read_only=True)
+    user_name = serializers.CharField(source='user.user_name', read_only=True)
+    
+    class Meta:
+        model = ChallengeSession
+        fields = [
+            'id', 'user_name', 'challenge_title', 'started_at', 
+            'ended_at', 'status'
+        ]
+        read_only_fields = ['id', 'started_at']

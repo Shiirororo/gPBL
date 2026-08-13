@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import conversation_service
+from .decorators import require_ai_unlocked
 from .exceptions import (
     AIProviderUnavailable,
     ChallengeNotFoundError,
@@ -12,6 +13,7 @@ from .exceptions import (
     ConversationNotFoundError,
     InvalidConversationStatusError,
 )
+from .lock_service import LockService
 from .serializers import (
     AIConversationDetailSerializer,
     AIConversationSerializer,
@@ -69,6 +71,7 @@ class ConversationListCreateView(APIView):
         )
         return Response(AIConversationSerializer(conversations, many=True).data)
 
+    @require_ai_unlocked
     def post(self, request):
         serializer = CreateConversationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -130,6 +133,7 @@ class ConversationMessageView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @require_ai_unlocked
     def post(self, request, conversation_id):
         serializer = SendMessageSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -175,3 +179,21 @@ class ConversationCloseView(APIView):
         ) as error:
             return _service_error_response(error)
         return Response(AIConversationSerializer(conversation).data)
+
+
+class LockStatusView(APIView):
+    """Check current lock status for the authenticated user."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get current AI lock status and remaining time."""
+        is_locked = LockService.is_ai_locked(request.user)
+        remaining_seconds = LockService.get_lock_remaining_time(request.user) if is_locked else 0
+        expiry_time = LockService.get_lock_expiry(request.user)
+        
+        return Response({
+            'ai_locked': is_locked,
+            'remaining_seconds': remaining_seconds,
+            'locked_until': expiry_time.isoformat() if expiry_time else None
+        })

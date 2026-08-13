@@ -95,10 +95,11 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME') or os.getenv('DATABASE_NAME', 'app_db'),
         'USER': os.getenv('DB_USER') or os.getenv('DATABASE_USER', 'gpbl'),
         'PASSWORD': os.getenv('DB_PASSWORD') or os.getenv('DATABASE_PASSWORD', '123456'),
-        'HOST': os.getenv('DB_HOST') or os.getenv('DATABASE_HOST', '18.142.252.44'),
+        'HOST': os.getenv('DATABASE_HOST'),
         'PORT': os.getenv('DB_PORT') or os.getenv('DATABASE_PORT', '3306'),
     }
 }
+#or os.getenv('DATABASE_HOST', '18.141.225.191')
 
 # Sample credential
 
@@ -157,5 +158,32 @@ STATIC_URL = 'static/'
 MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    },
+}
+
+# AI Lock Configuration
+AI_LOCK_DURATION_MINUTES = int(os.environ.get('AI_LOCK_DURATION_MINUTES', 10))
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'core.ai.lock_service': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }

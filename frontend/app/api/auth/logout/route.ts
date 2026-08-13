@@ -1,8 +1,13 @@
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 
 import { clearAuthCookies } from "@/lib/auth/cookies"
 
-export async function POST(): Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   await clearAuthCookies()
-  return NextResponse.json({ authenticated: false })
+  
+  // Get the origin from the request
+  const origin = request.nextUrl.origin
+  
+  // Redirect directly to login page after clearing cookies
+  return NextResponse.redirect(new URL("/auth/login", origin))
 }

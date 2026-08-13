@@ -6,6 +6,7 @@ from .views import (
     ConversationDraftView,
     ConversationListCreateView,
     ConversationMessageView,
+    LockStatusView,
 )
 
 
@@ -32,4 +33,5 @@ urlpatterns = [
         ConversationCloseView.as_view(),
         name="ai-conversation-close",
     ),
+    path("lock-status/", LockStatusView.as_view(), name="ai-lock-status"),
 ]

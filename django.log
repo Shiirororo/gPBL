@@ -1,0 +1,6 @@
+Removed 0 ai_assistance locks for user test_ai_lock_user
+Created AI lock for user test_ai_lock_user until 2026-08-13 03:28:20.132987+00:00
+Cleaned up 1 expired locks
+Created AI lock for user fake_user until 2026-08-13 03:32:21.618885+00:00
+Removed 1 ai_assistance locks for user test_ai_lock_user
+Created AI lock for user ai_lock_test_user until 2026-08-13 04:02:07.893743+00:00
