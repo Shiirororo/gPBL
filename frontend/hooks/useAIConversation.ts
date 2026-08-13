@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { aiAPI, AIAPIError } from "@/features/ai/api"
 import type { AIConversationDetail, ConversationStatus } from "@/features/ai/types"
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace"
+import { isConversationForChallenge } from "@/lib/conversation-scope"
 import type { AIMessage } from "@/providers/ChallengeWorkspaceProvider"
 import { generateId } from "@/utils/id"
 
@@ -27,6 +28,7 @@ export function useAIConversation() {
   const { conversationId, currentCode, revision, setConversation, setCurrentCode, setAIError } = workspace
   const challengeId = workspace.challenge?.challenge_id
   const starterCode = workspace.challenge?.starter_code ?? ""
+  const challengeIdRef = useRef(challengeId)
   const [isSending, setIsSending] = useState(false)
   const [isInitializing, setIsInitializing] = useState(false)
   const requestRef = useRef<{
@@ -35,10 +37,25 @@ export function useAIConversation() {
     question: string
     code: string
     revision: number
+    challengeId: number
   } | null>(null)
 
-  const loadDetail = useCallback(async (id: number, restoreCode = true) => {
+  useEffect(() => {
+    challengeIdRef.current = challengeId
+  }, [challengeId])
+
+  const loadDetail = useCallback(async (
+    id: number,
+    restoreCode = true,
+    expectedChallengeId = challengeIdRef.current,
+  ) => {
     const detail = await aiAPI.detail(id)
+    if (
+      !isConversationForChallenge(detail, expectedChallengeId) ||
+      challengeIdRef.current !== expectedChallengeId
+    ) {
+      return null
+    }
     setConversation(detail.conversation_id, detail.revision, messagesFrom(detail))
     if (restoreCode) setCurrentCode(detail.current_code)
     return detail
@@ -51,15 +68,25 @@ export function useAIConversation() {
     try {
       const conversations = await aiAPI.list(challengeId)
       if (!isCurrent()) return
-      const active = conversations.find((item) => item.status === "active")
+      const active = conversations.find(
+        (item) => item.status === "active" && isConversationForChallenge(item, challengeId),
+      )
       if (active) {
         const detail = await aiAPI.detail(active.conversation_id)
-        if (!isCurrent()) return
+        if (
+          !isCurrent() ||
+          challengeIdRef.current !== challengeId ||
+          !isConversationForChallenge(detail, challengeId)
+        ) return
         setConversation(detail.conversation_id, detail.revision, messagesFrom(detail))
         setCurrentCode(detail.current_code)
       } else {
         const created = await aiAPI.create(challengeId)
-        if (!isCurrent()) return
+        if (
+          !isCurrent() ||
+          challengeIdRef.current !== challengeId ||
+          !isConversationForChallenge(created, challengeId)
+        ) return
         setConversation(created.conversation_id, created.revision, [])
         setCurrentCode(created.current_code || starterCode)
       }
@@ -85,12 +112,14 @@ export function useAIConversation() {
 
   const sendMessage = useCallback(async (question: string) => {
     const trimmed = question.trim()
-    if (!trimmed || isSending || conversationId === null) return false
+    if (!trimmed || isSending || conversationId === null || challengeId === undefined) return false
+    const requestChallengeId = challengeId
     setIsSending(true)
     setAIError(null)
     const previousRequest = requestRef.current
     const samePayload = previousRequest !== null &&
       previousRequest.conversationId === conversationId &&
+      previousRequest.challengeId === requestChallengeId &&
       previousRequest.question === trimmed &&
       previousRequest.code === currentCode &&
       previousRequest.revision === revision
@@ -99,6 +128,7 @@ export function useAIConversation() {
       : {
           id: generateId(),
           conversationId,
+          challengeId: requestChallengeId,
           question: trimmed,
           code: currentCode,
           revision,
@@ -106,16 +136,22 @@ export function useAIConversation() {
     requestRef.current = request
     try {
       await aiAPI.sendMessage(conversationId, {
+        challenge_id: requestChallengeId,
         question: trimmed, code: currentCode,
         expected_revision: revision, request_id: request.id,
       })
       // Lấy revision và history chính xác từ server sau khi AI hoàn tất.
-      await loadDetail(conversationId, false)
+      const detail = await loadDetail(conversationId, false, requestChallengeId)
+      if (!detail) return false
       requestRef.current = null
       return true
     } catch (error) {
-      if (error instanceof AIAPIError && [409, 503].includes(error.status)) {
-        await loadDetail(conversationId, false).catch(() => undefined)
+      if (challengeIdRef.current !== requestChallengeId) return false
+      if (
+        error instanceof AIAPIError &&
+        [409, 503].includes(error.status)
+      ) {
+        await loadDetail(conversationId, false, requestChallengeId).catch(() => undefined)
       }
       if (error instanceof AIAPIError && error.code === "ai_unavailable") requestRef.current = null
       
@@ -131,11 +167,15 @@ export function useAIConversation() {
     } finally {
       setIsSending(false)
     }
-  }, [conversationId, currentCode, isSending, loadDetail, revision, setAIError])
+  }, [challengeId, conversationId, currentCode, isSending, loadDetail, revision, setAIError])
 
   const startNew = useCallback(async () => {
     if (!challengeId) return
     const created = await aiAPI.create(challengeId)
+    if (
+      challengeIdRef.current !== challengeId ||
+      !isConversationForChallenge(created, challengeId)
+    ) return
     setConversation(created.conversation_id, created.revision, [])
     setCurrentCode(created.current_code || starterCode)
     setAIError(null)

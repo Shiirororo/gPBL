@@ -32,9 +32,29 @@ class ConversationRequestSerializerTests(SimpleTestCase):
         self.assertTrue(valid.is_valid(), valid.errors)
         self.assertFalse(invalid.is_valid())
 
+    def test_draft_and_message_require_current_challenge_id(self):
+        draft = SaveDraftSerializer(data={"code": "", "expected_revision": 0})
+        message = SendMessageSerializer(
+            data={
+                "question": "Why?",
+                "code": "print(1)",
+                "request_id": str(uuid.uuid4()),
+                "expected_revision": 0,
+            }
+        )
+
+        self.assertFalse(draft.is_valid())
+        self.assertFalse(message.is_valid())
+        self.assertIn("challenge_id", draft.errors)
+        self.assertIn("challenge_id", message.errors)
+
     def test_draft_requires_code_and_non_negative_revision(self):
-        valid = SaveDraftSerializer(data={"code": "", "expected_revision": 0})
-        invalid = SaveDraftSerializer(data={"code": "x", "expected_revision": -1})
+        valid = SaveDraftSerializer(
+            data={"challenge_id": 12, "code": "", "expected_revision": 0}
+        )
+        invalid = SaveDraftSerializer(
+            data={"challenge_id": 12, "code": "x", "expected_revision": -1}
+        )
 
         self.assertTrue(valid.is_valid(), valid.errors)
         self.assertFalse(invalid.is_valid())
@@ -43,12 +63,14 @@ class ConversationRequestSerializerTests(SimpleTestCase):
         for payload in (
             {
                 "question": "   ",
+                "challenge_id": 12,
                 "code": "print(1)",
                 "request_id": str(uuid.uuid4()),
                 "expected_revision": 0,
             },
             {
                 "question": "Why?",
+                "challenge_id": 12,
                 "code": "print(1)",
                 "request_id": "not-a-uuid",
                 "expected_revision": 0,
@@ -62,6 +84,7 @@ class ConversationRequestSerializerTests(SimpleTestCase):
         serializer = SendMessageSerializer(
             data={
                 "question": "Why?",
+                "challenge_id": 12,
                 "code": "print(1)",
                 "request_id": str(uuid.uuid4()),
                 "expected_revision": 0,

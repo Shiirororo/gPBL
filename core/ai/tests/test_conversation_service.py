@@ -62,6 +62,7 @@ class ConversationLifecycleServiceTests(SimpleTestCase):
         result = self.service.autosave(
             user=self.user,
             conversation_id=3,
+            challenge_id=11,
             code="new code",
             expected_revision=4,
         )
@@ -70,6 +71,7 @@ class ConversationLifecycleServiceTests(SimpleTestCase):
         self.repository.autosave.assert_called_once_with(
             user=self.user,
             conversation_id=3,
+            challenge_id=11,
             code="new code",
             expected_revision=4,
         )
@@ -81,6 +83,7 @@ class ConversationLifecycleServiceTests(SimpleTestCase):
             self.service.autosave(
                 user=self.user,
                 conversation_id=3,
+                challenge_id=11,
                 code="code",
                 expected_revision=1,
             )
@@ -138,6 +141,7 @@ class MessageHistoryServiceTests(SimpleTestCase):
         result = self.service.append_message(
             user=self.user,
             conversation_id=3,
+            challenge_id=11,
             question="Why?",
             code="code version 2",
             request_id=uuid.uuid4(),
@@ -145,6 +149,11 @@ class MessageHistoryServiceTests(SimpleTestCase):
         )
 
         self.assertIs(result, existing)
+        self.repository.get_for_user.assert_called_once_with(
+            user=self.user,
+            conversation_id=3,
+            challenge_id=11,
+        )
         self.hint_generator.assert_not_called()
 
     def test_pending_or_failed_retry_is_reported_as_conflict(self):
@@ -159,6 +168,7 @@ class MessageHistoryServiceTests(SimpleTestCase):
                     self.service.append_message(
                         user=self.user,
                         conversation_id=3,
+                        challenge_id=11,
                         question="Why?",
                         code="code",
                         request_id=uuid.uuid4(),
@@ -194,6 +204,7 @@ class MessageHistoryServiceTests(SimpleTestCase):
         result = self.service.append_message(
             user=self.user,
             conversation_id=3,
+            challenge_id=11,
             question="What changed?",
             code="code version 2",
             request_id=request_id,

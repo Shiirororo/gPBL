@@ -32,6 +32,7 @@ class ConversationListQuerySerializer(StrictSerializer):
 class SaveDraftSerializer(StrictSerializer):
     """Validate the latest code and revision observed by the client."""
 
+    challenge_id = serializers.IntegerField(min_value=1)
     code = serializers.CharField(
         allow_blank=True,
         trim_whitespace=False,
@@ -43,6 +44,7 @@ class SaveDraftSerializer(StrictSerializer):
 class SendMessageSerializer(StrictSerializer):
     """Validate an AI request without accepting server-owned fields."""
 
+    challenge_id = serializers.IntegerField(min_value=1)
     question = serializers.CharField(
         allow_blank=False,
         trim_whitespace=True,

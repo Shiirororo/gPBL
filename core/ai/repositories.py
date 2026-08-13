@@ -36,10 +36,14 @@ class ConversationRepository:
             conversations = conversations.filter(challenge_id=challenge_id)
         return conversations.order_by("-updated_at", "-pk")
 
-    def get_for_user(self, *, user, conversation_id, for_update=False):
+    def get_for_user(
+        self, *, user, conversation_id, challenge_id=None, for_update=False
+    ):
         conversations = AIConversation.objects.filter(user=user).select_related(
             "challenge"
         )
+        if challenge_id is not None:
+            conversations = conversations.filter(challenge_id=challenge_id)
         if for_update:
             conversations = conversations.select_for_update()
         try:
@@ -47,11 +51,14 @@ class ConversationRepository:
         except AIConversation.DoesNotExist as error:
             raise ConversationNotFoundError("Conversation does not exist.") from error
 
-    def autosave(self, *, user, conversation_id, code, expected_revision):
+    def autosave(
+        self, *, user, conversation_id, challenge_id, code, expected_revision
+    ):
         # Optimistic locking chỉ cập nhật khi client đang giữ đúng revision mới nhất.
         updated = AIConversation.objects.filter(
             pk=conversation_id,
             user=user,
+            challenge_id=challenge_id,
             status="active",
             revision=expected_revision,
         ).update(
@@ -60,9 +67,17 @@ class ConversationRepository:
             updated_at=timezone.now(),
         )
         if updated:
-            return self.get_for_user(user=user, conversation_id=conversation_id)
+            return self.get_for_user(
+                user=user,
+                conversation_id=conversation_id,
+                challenge_id=challenge_id,
+            )
 
-        conversation = self.get_for_user(user=user, conversation_id=conversation_id)
+        conversation = self.get_for_user(
+            user=user,
+            conversation_id=conversation_id,
+            challenge_id=challenge_id,
+        )
         if conversation.status != "active":
             return conversation
         raise ConversationConflictError(

@@ -13,9 +13,9 @@ import { useAIConversationController } from "@/providers/AIConversationProvider"
 
 export default function ChatBox() {
   const [draft, setDraft] = React.useState("");
-  const { messages, aiError, conversationId } = useChallengeWorkspace();
+  const { messages, aiError, conversationId, loading } = useChallengeWorkspace();
   const { sendMessage, isSending, isInitializing, isSaving } = useAIConversationController();
-  const disabled = !draft.trim() || isSending || isInitializing || conversationId === null;
+  const disabled = !draft.trim() || loading || isSending || isInitializing || conversationId === null;
 
   const send = React.useCallback(async () => {
     if (disabled) return;

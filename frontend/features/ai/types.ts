@@ -28,6 +28,7 @@ export interface AIConversationDetail extends AIConversation {
 }
 
 export interface SaveDraftInput {
+  challenge_id: number
   code: string
   expected_revision: number
 }
