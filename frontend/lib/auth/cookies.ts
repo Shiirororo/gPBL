@@ -48,6 +48,6 @@ export async function setAuthCookies(
 
 export async function clearAuthCookies(): Promise<void> {
   const cookieStore = await cookies()
-  cookieStore.set(ACCESS_TOKEN_COOKIE, "", cookieOptions(0))
-  cookieStore.set(REFRESH_TOKEN_COOKIE, "", cookieOptions(0))
+  cookieStore.delete(ACCESS_TOKEN_COOKIE)
+  cookieStore.delete(REFRESH_TOKEN_COOKIE)
 }
