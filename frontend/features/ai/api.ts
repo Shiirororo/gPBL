@@ -16,6 +16,10 @@ export class AIAPIError extends Error {
     super(message)
     this.name = "AIAPIError"
   }
+
+  get isAILocked(): boolean {
+    return this.status === 423 && this.code === "ai_locked"
+  }
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {

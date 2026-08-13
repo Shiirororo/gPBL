@@ -318,3 +318,50 @@ class AIExchange(models.Model):
             f"AIExchange #{self.exchange_id} - "
             f"conversation #{self.conversation_id} - sequence {self.sequence}"
         )
+
+
+class FeatureLock(models.Model):
+    """Track temporary feature locks for users (e.g., AI assistance locks)"""
+    
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, to_field='user_id')
+    feature = models.CharField(max_length=100)
+    locked_until = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'feature']
+        db_table = 'feature_locks'
+        
+    def __str__(self):
+        return f"{self.user.user_name} - {self.feature} locked until {self.locked_until}"
+        
+    @property
+    def is_expired(self):
+        """Check if the lock has expired"""
+        from django.utils import timezone
+        return timezone.now() > self.locked_until
+
+
+class ChallengeSession(models.Model):
+    """Track when users start and interact with challenges"""
+    
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('abandoned', 'Abandoned')
+    ]
+    
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    challenge = models.ForeignKey(CodingChallenge, on_delete=models.CASCADE, to_field='challenge_id')
+    started_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    
+    class Meta:
+        unique_together = ['user', 'challenge']
+        db_table = 'challenge_sessions'
+        
+    def __str__(self):
+        return f"{self.user.user_name} - {self.challenge.title} ({self.status})"
