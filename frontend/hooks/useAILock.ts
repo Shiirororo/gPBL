@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react"
-import { aiAPI } from "@/features/ai/api"
+import { challengeStartPath } from "@/lib/ai-lock-routes"
 
 interface AILockStatus {
   ai_locked: boolean
@@ -29,7 +29,7 @@ interface ChallengeStartResponse {
 /**
  * Hook to manage AI lock status and challenge session
  */
-export function useAILock(challengeId?: number) {
+export function useAILock() {
   const [lockStatus, setLockStatus] = useState<AILockStatus | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,7 +69,7 @@ export function useAILock(challengeId?: number) {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/challenges/challenge/${challengeId}/start/`, {
+      const response = await fetch(challengeStartPath(challengeId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,11 @@ export function useAILock(challengeId?: number) {
 
   // Initial load
   useEffect(() => {
-    checkLockStatus()
+    const timeoutId = window.setTimeout(() => {
+      void checkLockStatus()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [checkLockStatus])
 
   // Helper function to format remaining time
@@ -155,7 +159,7 @@ export function useAILock(challengeId?: number) {
  * Hook specifically for challenge start functionality with session tracking
  */
 export function useChallengeStart(challengeId?: number) {
-  const { startChallenge, isLoading, error } = useAILock(challengeId)
+  const { startChallenge, isLoading, error } = useAILock()
   const [hasAttemptedStart, setHasAttemptedStart] = useState(false)
 
   // Check if we've already started this challenge in this session

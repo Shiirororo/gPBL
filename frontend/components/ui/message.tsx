@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { UserIcon, RobotIcon, CopyIcon, CheckIcon } from "@phosphor-icons/react"
+import { UserIcon, RobotIcon } from "@phosphor-icons/react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
@@ -55,39 +55,6 @@ function MessageAvatar({ role }: { role: MessageRole }) {
         <RobotIcon weight="bold" className="size-3.5" />
       )}
     </div>
-  )
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = React.useState(false)
-
-  const handleCopy = React.useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      // clipboard unavailable
-    }
-  }, [text])
-
-  return (
-    <button
-      aria-label="Copy message"
-      onClick={handleCopy}
-      className={cn(
-        "flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-all duration-150",
-        "opacity-0 group-hover/message:opacity-100 focus-visible:opacity-100",
-        "hover:bg-muted hover:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/50"
-      )}
-    >
-      {copied ? (
-        <CheckIcon weight="bold" className="size-3 text-green-500 dark:text-green-400" />
-      ) : (
-        <CopyIcon weight="bold" className="size-3" />
-      )}
-    </button>
   )
 }
 
@@ -194,18 +161,6 @@ function Message({
             )
           ) : (
             children
-          )}
-
-          {/* Copy button — appears on hover */}
-          {displayContent && (
-            <div
-              className={cn(
-                "absolute -top-3 flex items-center gap-1",
-                isUser ? "left-1" : "right-1"
-              )}
-            >
-              <CopyButton text={displayContent} />
-            </div>
           )}
         </div>
       </div>
