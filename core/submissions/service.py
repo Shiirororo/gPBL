@@ -8,7 +8,8 @@ SubmissionService — orchestrates the full submission pipeline:
   3. Run code through TestCaseEvaluator (DockerRunner).
   4. Persist a Result row.
   5. On first-time AC: record UserCompletedChallenge and add score to User.
-  6. Return a structured dict ready for SubmissionResultSerializer.
+  6. On 100% AC: create CodeAssessment for comprehension evaluation.
+  7. Return a structured dict ready for SubmissionResultSerializer.
 
 Keeping all DB writes and business logic here (not in the view) makes the
 service easy to call from Celery workers in Milestone 4.
@@ -19,10 +20,12 @@ from __future__ import annotations
 import logging
 
 from django.db import transaction
+from django.conf import settings
 
-from core.models import CodingChallenge, Result, UserCompletedChallenge, User
+from core.models import CodingChallenge, Result, UserCompletedChallenge, User, CodeAssessment
 from core.judge.evaluator import TestCaseEvaluator, EvaluationResult
 from core.judge.runner import ExecutionStatus, RunnerConfig
+from core.ai.assessment_service import get_assessment_service
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +107,7 @@ class SubmissionService:
     ) -> Result:
         """
         Write a Result row and optionally a UserCompletedChallenge row.
+        On 100% AC, also create a CodeAssessment for comprehension evaluation.
 
         Wrapped in a transaction so a DB error doesn't leave orphaned rows.
         """
@@ -135,8 +139,40 @@ class SubmissionService:
                     "User %s first-time AC on challenge %s — awarded %s points",
                     user.user_name, challenge.challenge_id, challenge.score,
                 )
+            
+            # 100% AC → create code assessment
+            if eval_result.passed == eval_result.total and getattr(settings, 'ASSESSMENT_ENABLED', True):
+                self._create_code_assessment(result_row, challenge, code)
 
         return result_row
+
+    def _create_code_assessment(self, result: Result, challenge: CodingChallenge, code: str):
+        """Generate AI questions and create pending assessment."""
+        try:
+            # Check if assessment already exists (avoid duplicates)
+            existing = CodeAssessment.objects.filter(result=result).exists()
+            if existing:
+                logger.info(f"Assessment already exists for result {result.result_id}")
+                return
+            
+            assessment_service = get_assessment_service()
+            questions = assessment_service.generate_assessment_questions(
+                code=code,
+                challenge_description=challenge.description,
+                challenge_title=challenge.title
+            )
+            
+            CodeAssessment.objects.create(
+                result=result,
+                status='PENDING',
+                questions=questions
+            )
+            
+            logger.info(f"Created code assessment for result {result.result_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to create assessment for result {result.result_id}: {e}")
+            # Don't fail the submission if assessment creation fails
 
     @staticmethod
     def _build_response(

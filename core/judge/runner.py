@@ -204,21 +204,36 @@ def _to_json_args(stdin_data: str, code: str, function_name: str) -> str:
     Convert a raw test-case ``input`` string into the JSON array expected by
     the runner wrapper.
 
-    Handles three formats:
+    Handles four formats:
 
     1. **Already a JSON array** – returned as-is (e.g. ``"[[2,7,11,15], 9]"``).
-    2. **LeetCode key=value pairs** – parsed and reordered by the function
+    2. **JSON object (dict)** – values reordered by the function signature
+       (e.g. ``'{"nums": [2,7,11,15], "target": 9}'`` → ``"[[2,7,11,15], 9]"``).
+       This is the format produced when a Django JSONField stores a dict and
+       ``_load_from_db`` serialises it with ``json.dumps``.
+    3. **LeetCode key=value pairs** – parsed and reordered by the function
        signature (e.g. ``"nums = [2,7,11,15]    target = 9"``).
-    3. **Unrecognised / empty** – returned unchanged and let the wrapper
+    4. **Unrecognised / empty** – returned unchanged and let the wrapper
        handle it (falls back to ``[]`` on blank input).
     """
     stripped = stdin_data.strip()
 
-    # --- Fast-path: already valid JSON array ---------------------------------
+    # --- Fast-path: already valid JSON ---------------------------------------
     try:
         parsed = json.loads(stripped)
         if isinstance(parsed, list):
-            return stripped
+            return stripped  # already a JSON array — nothing to do
+
+        if isinstance(parsed, dict):
+            # Input was stored as a JSON object (e.g. from a Django JSONField).
+            # Re-order values by the function signature so the runner receives
+            # a positional argument list instead of a mapping.
+            param_names = _extract_param_names(code, function_name)
+            if param_names:
+                ordered = [parsed[p] for p in param_names if p in parsed]
+            else:
+                ordered = list(parsed.values())
+            return json.dumps(ordered)
     except (json.JSONDecodeError, ValueError):
         pass
 
