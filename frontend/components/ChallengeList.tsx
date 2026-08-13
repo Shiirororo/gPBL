@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
-import { getChallenges } from "@/features/challenges/api"
+import { useChallengesQuery } from "@/features/challenges/queries"
 import type { Challenge, ChallengeDifficulty } from "@/features/challenges/types"
 
 type FilterDifficulty = "all" | ChallengeDifficulty
@@ -35,31 +35,9 @@ function isSolved(challenge: Challenge): boolean {
 }
 
 export default function ChallengeList() {
-  const [challenges, setChallenges] = useState<Challenge[]>([])
   const [filter, setFilter] = useState<FilterDifficulty>("all")
   const [search, setSearch] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    void getChallenges(controller.signal)
-      .then((items) => {
-        setChallenges(items)
-        setError(null)
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : "Unable to load challenges.")
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false)
-      })
-
-    return () => controller.abort()
-  }, [])
+  const { data: challenges = [], error, isPending } = useChallengesQuery()
 
   const filtered = useMemo(
     () =>
@@ -110,13 +88,13 @@ export default function ChallengeList() {
       </div>
 
       <ul className="flex-1 divide-y divide-border overflow-y-auto">
-        {loading && <li className="p-6 text-center text-sm text-muted-foreground">Loading challenges...</li>}
-        {!loading && error && <li role="alert" className="p-6 text-center text-sm text-red-400">{error}</li>}
-        {!loading && !error && filtered.length === 0 && (
+        {isPending && <li className="p-6 text-center text-sm text-muted-foreground">Loading challenges...</li>}
+        {!isPending && error && <li role="alert" className="p-6 text-center text-sm text-red-400">{error.message}</li>}
+        {!isPending && !error && filtered.length === 0 && (
           <li className="p-6 text-center text-sm text-muted-foreground">No problems found.</li>
         )}
 
-        {!loading && !error && filtered.map((challenge) => (
+        {!isPending && !error && filtered.map((challenge) => (
           <li key={challenge.challenge_id}>
             <Link
               href={`/challenge/${challenge.challenge_id}`}

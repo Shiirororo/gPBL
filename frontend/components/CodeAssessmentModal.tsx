@@ -17,7 +17,8 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, AlertCircle, BookOpen, Code } from 'lucide-react'
 import { getAssessmentDetail, submitAssessmentAnswers } from '@/features/assessment/api'
-import { AssessmentDetail, AssessmentQuestion } from '@/features/assessment/types'
+import { AssessmentDetail } from '@/features/assessment/types'
+import { canCloseAssessment } from '@/lib/assessment-dialog-policy'
 
 interface CodeAssessmentModalProps {
   assessmentId: number
@@ -133,8 +134,10 @@ export function CodeAssessmentModal({ assessmentId, isOpen, onComplete }: CodeAs
     }
   }
 
-  const handleClose = () => {
-    if (assessment?.status === 'COMPLETED') {
+  const assessmentCanClose = canCloseAssessment(assessment?.status)
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open && assessmentCanClose) {
       onComplete()
     }
   }
@@ -142,21 +145,14 @@ export function CodeAssessmentModal({ assessmentId, isOpen, onComplete }: CodeAs
   if (!isOpen) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent 
+    <Dialog
+      open={isOpen}
+      disablePointerDismissal={!assessmentCanClose}
+      onOpenChange={handleOpenChange}
+    >
+      <DialogContent
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
-        onPointerDownOutside={(e) => {
-          // Prevent closing if not completed
-          if (assessment?.status !== 'COMPLETED') {
-            e.preventDefault()
-          }
-        }}
-        onEscapeKeyDown={(e) => {
-          // Prevent closing if not completed
-          if (assessment?.status !== 'COMPLETED') {
-            e.preventDefault()
-          }
-        }}
+        showCloseButton={assessmentCanClose}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -253,7 +249,7 @@ export function CodeAssessmentModal({ assessmentId, isOpen, onComplete }: CodeAs
                   )}
 
                   <div className="pt-4">
-                    <Button onClick={handleClose} className="w-full">
+                    <Button onClick={() => handleOpenChange(false)} className="w-full">
                       Continue to Platform
                     </Button>
                   </div>
@@ -293,7 +289,7 @@ export function CodeAssessmentModal({ assessmentId, isOpen, onComplete }: CodeAs
                         disabled={isSubmitting}
                       />
                       <div className="text-xs text-gray-500">
-                        Tip: Be specific about your code's implementation, not generic algorithm concepts.
+                        Tip: Be specific about your code&apos;s implementation, not generic algorithm concepts.
                       </div>
                     </div>
                   </CardContent>

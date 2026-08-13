@@ -11,31 +11,38 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { getChallenge } from "@/features/challenges/api"
+import { useChallengeQuery } from "@/features/challenges/queries"
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace"
-import { useChallengeStart } from "@/hooks/useAILock"
 import { AIConversationProvider } from "@/providers/AIConversationProvider"
 import { AILockStatus } from "@/components/AILockStatus"
 
 export default function ChallengeWorkspace({ challengeId }: { challengeId: number }) {
-  const { setChallenge, setChallengeError, setLoading } = useChallengeWorkspace()
+  const {
+    challenge,
+    setChallenge,
+    setChallengeError,
+    setLoading,
+  } = useChallengeWorkspace()
+  const challengeQuery = useChallengeQuery(challengeId)
 
   useEffect(() => {
-    const controller = new AbortController()
-    setLoading(true)
-    setChallengeError(null)
+    if (challengeQuery.data && challenge?.challenge_id !== challengeId) {
+      setChallenge(challengeQuery.data)
+      return
+    }
 
-    // Load challenge data only - don't auto-start session
-    void getChallenge(challengeId, controller.signal)
-      .then(setChallenge)
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) {
-          setChallengeError(cause instanceof Error ? cause.message : "Unable to load challenge.")
-        }
-      })
-
-    return () => controller.abort()
-  }, [challengeId, setChallenge, setChallengeError, setLoading])
+    setLoading(challengeQuery.isPending)
+    setChallengeError(challengeQuery.error?.message ?? null)
+  }, [
+    challenge?.challenge_id,
+    challengeId,
+    challengeQuery.data,
+    challengeQuery.error,
+    challengeQuery.isPending,
+    setChallenge,
+    setChallengeError,
+    setLoading,
+  ])
 
   return (
     <AIConversationProvider>
