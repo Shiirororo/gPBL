@@ -212,4 +212,47 @@ CREATE TABLE ai_questions (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+
+
+-- =========================================================
+-- 7. CODE ASSESSMENTS (NEW)
+-- =========================================================
+
+CREATE TABLE code_assessments (
+    assessment_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    
+    result_id BIGINT UNSIGNED NOT NULL,
+    
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    
+    questions JSON NOT NULL,
+    
+    answers JSON NULL,
+    
+    ai_score DECIMAL(5,2) NULL,
+    
+    ai_feedback TEXT NULL,
+    
+    detailed_scores JSON NULL,
+    
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    started_at TIMESTAMP NULL,
+    
+    completed_at TIMESTAMP NULL,
+    
+    PRIMARY KEY (assessment_id),
+    
+    UNIQUE KEY uk_assessments_result_id (result_id),
+    
+    INDEX idx_assessments_status (status),
+    
+    CONSTRAINT fk_assessments_result
+        FOREIGN KEY (result_id)
+        REFERENCES results(result_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci;   

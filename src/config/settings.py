@@ -31,7 +31,7 @@ DEBUG = True
 
 #CORS
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Allow all hosts for development
 
 
 # Application definition
@@ -92,11 +92,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME') or os.getenv('DATABASE_NAME', 'app_db'),
-        'USER': os.getenv('DB_USER') or os.getenv('DATABASE_USER', 'gpbl'),
-        'PASSWORD': os.getenv('DB_PASSWORD') or os.getenv('DATABASE_PASSWORD', '123456'),
+        'NAME': os.getenv('DATABASE_NAME'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
         'HOST': os.getenv('DATABASE_HOST'),
-        'PORT': os.getenv('DB_PORT') or os.getenv('DATABASE_PORT', '3306'),
+        'PORT': os.getenv('DATABASE_PORT'),
     }
 }
 #or os.getenv('DATABASE_HOST', '18.141.225.191')
@@ -163,6 +163,12 @@ MAILERS = {
 
 # AI Lock Configuration
 AI_LOCK_DURATION_MINUTES = int(os.environ.get('AI_LOCK_DURATION_MINUTES', 10))
+
+# Assessment Configuration
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+ASSESSMENT_QUESTION_COUNT = int(os.environ.get('ASSESSMENT_QUESTION_COUNT', 6))
+OPENAI_ASSESSMENT_MODEL = os.environ.get('OPENAI_ASSESSMENT_MODEL', 'gpt-4')
+ASSESSMENT_ENABLED = os.environ.get('ASSESSMENT_ENABLED', 'True').lower() == 'true'
 
 # Logging Configuration
 LOGGING = {

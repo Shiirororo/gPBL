@@ -5,6 +5,7 @@ import { SubmissionApiError, submitCode } from "@/features/submissions/api";
 import type { SubmissionResult } from "@/features/submissions/types";
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAssessmentCheck } from "@/hooks/useAssessmentCheck";
 
 interface SubmitArguments {
   challengeId: number;
@@ -15,6 +16,7 @@ interface SubmitArguments {
 export function useSubmission() {
   const workspace = useChallengeWorkspace();
   const { refreshCurrentUser } = useCurrentUser();
+  const { recheckAssessment } = useAssessmentCheck();
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +47,14 @@ export function useSubmission() {
       const nextResult = await submitCode(resolvedInput);
       setResult(nextResult);
       workspace.setSubmissionResult(nextResult);
-      if (nextResult.status === "AC") void refreshCurrentUser();
+      if (nextResult.status === "AC") {
+        void refreshCurrentUser();
+        
+        // Check for new assessments on 100% AC
+        if (nextResult.passed_testcases === nextResult.total_testcases) {
+          setTimeout(() => recheckAssessment(), 1000); // Small delay for DB consistency
+        }
+      }
       return nextResult;
     } catch (cause) {
       const message = cause instanceof SubmissionApiError
@@ -56,7 +65,7 @@ export function useSubmission() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [workspace, refreshCurrentUser]);
+  }, [workspace, refreshCurrentUser, recheckAssessment]);
 
   const clearResult = useCallback(() => {
     setResult(null);

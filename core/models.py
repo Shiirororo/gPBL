@@ -209,6 +209,61 @@ class AiQuestion(models.Model):
         return f"AiQuestion #{self.question_id} - {self.user}"
 
 
+class CodeAssessment(models.Model):
+    ASSESSMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending - questions generated, awaiting answers'),
+        ('IN_PROGRESS', 'User answering questions'),
+        ('COMPLETED', 'Assessment completed'),
+    ]
+    
+    assessment_id = models.BigAutoField(primary_key=True)
+    
+    # Links to the AC submission that triggered this assessment
+    result = models.OneToOneField(
+        'Result',
+        on_delete=models.CASCADE,
+        related_name='code_assessment'
+    )
+    
+    # Assessment state
+    status = models.CharField(
+        max_length=20,
+        choices=ASSESSMENT_STATUS_CHOICES,
+        default='PENDING'
+    )
+    
+    # AI-generated questions (JSON array)
+    questions = models.JSONField()
+    
+    # User answers (JSON object)
+    answers = models.JSONField(null=True, blank=True)
+    
+    # AI evaluation results
+    ai_score = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        null=True, 
+        blank=True
+    )
+    ai_feedback = models.TextField(null=True, blank=True)
+    detailed_scores = models.JSONField(null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'code_assessments'
+        indexes = [
+            models.Index(fields=['result'], name='idx_assessments_result_id'),
+            models.Index(fields=['status'], name='idx_assessments_status'),
+        ]
+    
+    def __str__(self):
+        return f"CodeAssessment #{self.assessment_id} - {self.result.user} - {self.status}"
+
+
 class AIConversation(models.Model):
     """Một phiên làm bài độc lập của người dùng trên một challenge."""
 
