@@ -17,10 +17,11 @@ export default function ChatBox() {
   const { sendMessage, isSending, isInitializing, isSaving } = useAIConversationController();
   const disabled = !draft.trim() || loading || isSending || isInitializing || conversationId === null;
 
-  const send = React.useCallback(async () => {
+  const send = React.useCallback(() => {
     if (disabled) return;
-    const sent = await sendMessage(draft);
-    if (sent) setDraft("");
+    const question = draft;
+    setDraft("");
+    void sendMessage(question);
   }, [disabled, draft, sendMessage]);
 
   return (
@@ -49,6 +50,16 @@ export default function ChatBox() {
                     <Message role={message.role} content={message.content} timestamp="" />
                   </MessageScrollerItem>
                 ))}
+                {isSending && (
+                  <MessageScrollerItem scrollAnchor>
+                    <div
+                      role="status"
+                      className="mx-4 w-fit rounded-2xl bg-muted px-4 py-2 text-sm text-muted-foreground"
+                    >
+                      AI is thinking...
+                    </div>
+                  </MessageScrollerItem>
+                )}
               </MessageScrollerContent>
             </MessageScrollerViewport>
             <MessageScrollerButton />
