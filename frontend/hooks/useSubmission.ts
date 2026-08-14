@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { SubmissionApiError, submitCode } from "@/features/submissions/api";
 import type { SubmissionResult } from "@/features/submissions/types";
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useAssessmentCheck } from "@/hooks/useAssessmentCheck";
+import { challengeQueryKeys } from "@/lib/challenge-query-policy";
 
 interface SubmitArguments {
   challengeId: number;
@@ -14,6 +16,7 @@ interface SubmitArguments {
 }
 
 export function useSubmission() {
+  const queryClient = useQueryClient();
   const workspace = useChallengeWorkspace();
   const { refreshCurrentUser } = useCurrentUser();
   const { recheckAssessment } = useAssessmentCheck();
@@ -47,6 +50,7 @@ export function useSubmission() {
       const nextResult = await submitCode(resolvedInput);
       setResult(nextResult);
       workspace.setSubmissionResult(nextResult);
+      void queryClient.invalidateQueries({ queryKey: challengeQueryKeys.all });
       if (nextResult.status === "AC") {
         void refreshCurrentUser();
         
@@ -65,7 +69,7 @@ export function useSubmission() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [workspace, refreshCurrentUser, recheckAssessment]);
+  }, [workspace, refreshCurrentUser, recheckAssessment, queryClient]);
 
   const clearResult = useCallback(() => {
     setResult(null);

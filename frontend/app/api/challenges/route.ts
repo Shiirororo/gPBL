@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
+import { backendFetch } from "@/lib/api/backend-fetch";
 
 export async function GET() {
   try {
     // Django hiện chưa có GET collection; route này giữ contract cho khi backend bổ sung.
-    const response = await fetch(`${BACKEND_URL}/api/challenges/challenge/`, {
+    const response = await backendFetch("/api/challenges/challenge/", {
       method: "GET",
-      cache: "no-store",
     });
     const body = await response.json().catch(() => ({ error: "Invalid backend response." }));
 

@@ -9,6 +9,9 @@ class CodingChallengeSerializer(serializers.ModelSerializer):
     # inserted via raw SQL rather than the ORM. This field normalises the value
     # to always be a list so the frontend never receives a bare string.
     categories = serializers.SerializerMethodField()
+    passed_testcases = serializers.SerializerMethodField()
+    total_testcases = serializers.SerializerMethodField()
+    completion_rate = serializers.SerializerMethodField()
 
     class Meta:
         model = CodingChallenge
@@ -24,6 +27,9 @@ class CodingChallengeSerializer(serializers.ModelSerializer):
             "learning_status",
             "example_of_correct_code",
             "acceptance_rate",
+            "passed_testcases",
+            "total_testcases",
+            "completion_rate",
         ]
         read_only_fields = ["challenge_id"]
 
@@ -41,6 +47,20 @@ class CodingChallengeSerializer(serializers.ModelSerializer):
             except (json.JSONDecodeError, ValueError):
                 return []
         return []
+
+    def get_passed_testcases(self, obj) -> int:
+        total = self.get_total_testcases(obj)
+        passed = max(int(getattr(obj, "user_passed_testcases", 0) or 0), 0)
+        return min(passed, total)
+
+    def get_total_testcases(self, obj) -> int:
+        return max(int(getattr(obj, "total_testcases", 0) or 0), 0)
+
+    def get_completion_rate(self, obj) -> float:
+        total = self.get_total_testcases(obj)
+        if total == 0:
+            return 0.0
+        return round(self.get_passed_testcases(obj) * 100 / total, 2)
 
     def validate_title(self, value):
         if CodingChallenge.objects.filter(title=value).exists():
