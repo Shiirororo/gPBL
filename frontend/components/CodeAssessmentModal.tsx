@@ -271,7 +271,7 @@ export function CodeAssessmentModal({ assessmentId, isOpen, onComplete }: CodeAs
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-gray-700 leading-relaxed">
+                    <p className="text-white leading-relaxed">
                       {assessment.questions[currentQuestionIndex].question}
                     </p>
                     
