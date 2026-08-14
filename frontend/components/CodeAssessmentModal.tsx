@@ -241,7 +241,7 @@ export function CodeAssessmentModal({ assessmentId, isOpen, onComplete }: CodeAs
                                 {score.score}/100
                               </Badge>
                             </div>
-                            <p className="text-sm text-gray-600">{score.feedback}</p>
+                            <p className="text-sm text-white-600">{score.feedback}</p>
                           </div>
                         ) : null
                       })}
