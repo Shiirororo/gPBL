@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import type { AuthenticatedUser } from "@/features/auth/types";
+import { DEFAULT_AVATAR, isAvailableAvatar } from "@/features/profile/avatars";
 
 interface UserContextValue {
   currentUser: AuthenticatedUser | null;
@@ -27,7 +28,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const setCurrentUser = useCallback((user: AuthenticatedUser) => {
-    setCurrentUserState({ ...user });
+    setCurrentUserState({
+      ...user,
+      avatar: isAvailableAvatar(user.avatar) ? user.avatar : DEFAULT_AVATAR,
+    });
     setError(null);
   }, []);
 
@@ -53,6 +57,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const user: AuthenticatedUser = {
         user_name: data.user_name,
         score: data.score,
+        avatar: isAvailableAvatar(data.avatar) ? data.avatar : DEFAULT_AVATAR,
         ...(typeof data.streak === "number" ? { streak: data.streak } : {}),
       };
       setCurrentUserState({ ...user });

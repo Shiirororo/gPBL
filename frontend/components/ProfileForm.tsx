@@ -1,13 +1,22 @@
 "use client";
 
-import { IdentificationCard, Star, User } from "@phosphor-icons/react";
+import Image from "next/image";
+import { IdentificationCard, Star } from "@phosphor-icons/react";
 import { useEffect } from "react";
 
+import AvatarSelectorDialog from "@/components/AvatarSelectorDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DEFAULT_AVATAR, avatarPath } from "@/features/profile/avatars";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function ProfileForm() {
-  const { currentUser: profile, loading, error, refreshCurrentUser } = useCurrentUser();
+  const {
+    currentUser: profile,
+    loading,
+    error,
+    refreshCurrentUser,
+    setCurrentUser,
+  } = useCurrentUser();
 
   useEffect(() => {
     if (!profile && !loading && !error) void refreshCurrentUser();
@@ -17,11 +26,28 @@ export default function ProfileForm() {
     <Card className="overflow-hidden rounded-2xl border-border bg-card shadow-xl shadow-black/10">
       <div className="h-24 bg-gradient-to-r from-violet-600/30 via-indigo-500/20 to-transparent" />
       <CardHeader className="relative border-b border-border pt-12">
-        <span className="absolute -top-10 left-6 flex size-20 items-center justify-center rounded-2xl border-4 border-card bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg">
-          <User size={34} weight="bold" />
+        <span className="absolute -top-10 left-6 size-20 overflow-hidden rounded-2xl border-4 border-card bg-muted shadow-lg">
+          <Image
+            src={avatarPath(profile?.avatar ?? DEFAULT_AVATAR)}
+            alt={`${profile?.user_name ?? "User"} avatar`}
+            width={128}
+            height={128}
+            priority
+            className="size-full object-cover"
+          />
         </span>
-        <CardTitle className="font-mono text-xl">{profile?.user_name ?? "User profile"}</CardTitle>
-        <CardDescription>Your gPBL account and learning progress.</CardDescription>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="font-mono text-xl">{profile?.user_name ?? "User profile"}</CardTitle>
+            <CardDescription>Your gPBL account and learning progress.</CardDescription>
+          </div>
+          {profile && (
+            <AvatarSelectorDialog
+              currentAvatar={profile.avatar}
+              onAvatarUpdated={setCurrentUser}
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-6">
         {loading && !profile && <p className="text-sm text-muted-foreground">Loading profile...</p>}
