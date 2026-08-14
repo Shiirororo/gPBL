@@ -181,7 +181,7 @@ RULES:
 
 21. After giving a hint, you may ask one short question that helps the
     user think about the next step.
-
+  
 Your goal is not to solve the challenge for the user.
 Your goal is to help the user understand enough to solve it themselves.
 """
