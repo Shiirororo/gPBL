@@ -8,34 +8,31 @@
  * Only runs the check when the user is authenticated.
  */
 
-import { ReactNode, useContext, useEffect, useState } from 'react'
+import { ReactNode } from 'react'
 import { useAssessmentCheck } from '@/hooks/useAssessmentCheck'
 import { CodeAssessmentModal } from './CodeAssessmentModal'
-import { UserContext } from '@/providers/UserProvider'
 
 interface AssessmentGateProps {
   children: ReactNode
 }
 
 export function AssessmentGate({ children }: AssessmentGateProps) {
-  const userCtx = useContext(UserContext)
-  const isAuthenticated = !!userCtx?.currentUser
-  const { pendingAssessment, isLoading, hasPendingAssessment, recheckAssessment } = useAssessmentCheck(isAuthenticated)
-  const [showAssessment, setShowAssessment] = useState(false)
-
-  // Show assessment modal when we have a pending assessment
-  useEffect(() => {
-    setShowAssessment(hasPendingAssessment)
-  }, [hasPendingAssessment])
+  const {
+    pendingAssessment,
+    isLoading,
+    hasCheckedAssessment,
+    hasPendingAssessment,
+    recheckAssessment,
+  } = useAssessmentCheck()
+  const showAssessment = hasPendingAssessment
 
   const handleAssessmentComplete = () => {
-    setShowAssessment(false)
-    // Re-check to ensure it's actually complete
-    setTimeout(() => recheckAssessment(), 500)
+    void recheckAssessment()
   }
 
-  // Show loading state initially
-  if (isLoading) {
+  // Block only the initial bootstrap check. Later rechecks should not hide the page
+  // while the submit result is being displayed.
+  if (isLoading && !hasCheckedAssessment) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
