@@ -53,10 +53,9 @@ export function useSubmission() {
       void queryClient.invalidateQueries({ queryKey: challengeQueryKeys.all });
       if (nextResult.status === "AC") {
         void refreshCurrentUser();
-        
-        // Check for new assessments on 100% AC
+
         if (nextResult.passed_testcases === nextResult.total_testcases) {
-          setTimeout(() => recheckAssessment(), 1000); // Small delay for DB consistency
+          await recheckAssessment();
         }
       }
       return nextResult;

@@ -40,6 +40,7 @@ type WorkspaceAction =
   | { type: "setRevision"; revision: number }
   | { type: "setMessages"; messages: AIMessage[] }
   | { type: "appendMessage"; message: AIMessage }
+  | { type: "removeMessage"; messageId: AIMessage["id"] }
   | { type: "setSubmissionResult"; result: SubmissionResult | null }
   | { type: "setLoading"; loading: boolean }
   | { type: "setChallengeError"; error: string | null }
@@ -77,7 +78,14 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
     case "setMessages":
       return { ...state, messages: [...action.messages] };
     case "appendMessage":
-      return { ...state, messages: [...state.messages, action.message] };
+      return state.messages.some((message) => message.id === action.message.id)
+        ? state
+        : { ...state, messages: [...state.messages, action.message] };
+    case "removeMessage":
+      return {
+        ...state,
+        messages: state.messages.filter((message) => message.id !== action.messageId),
+      };
     case "setSubmissionResult":
       return { ...state, submissionResult: action.result };
     case "setLoading":
@@ -104,6 +112,7 @@ export interface ChallengeWorkspaceValue extends WorkspaceState {
   setRevision: (revision: number) => void;
   setMessages: (messages: AIMessage[]) => void;
   appendMessage: (message: AIMessage) => void;
+  removeMessage: (messageId: AIMessage["id"]) => void;
   setSubmissionResult: (result: SubmissionResult | null) => void;
   setLoading: (loading: boolean) => void;
   setChallengeError: (error: string | null) => void;
@@ -142,14 +151,15 @@ export function ChallengeWorkspaceProvider({
   const setRevision = useCallback((revision: number) => dispatch({ type: "setRevision", revision }), []);
   const setMessages = useCallback((messages: AIMessage[]) => dispatch({ type: "setMessages", messages }), []);
   const appendMessage = useCallback((message: AIMessage) => dispatch({ type: "appendMessage", message }), []);
+  const removeMessage = useCallback((messageId: AIMessage["id"]) => dispatch({ type: "removeMessage", messageId }), []);
   const setSubmissionResult = useCallback((result: SubmissionResult | null) => dispatch({ type: "setSubmissionResult", result }), []);
   const setLoading = useCallback((loading: boolean) => dispatch({ type: "setLoading", loading }), []);
   const setChallengeError = useCallback((error: string | null) => dispatch({ type: "setChallengeError", error }), []);
   const setAIError = useCallback((error: string | null) => dispatch({ type: "setAIError", error }), []);
 
   const value = useMemo(
-    () => ({ ...state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, setSubmissionResult, setLoading, setChallengeError, setAIError }),
-    [state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, setSubmissionResult, setLoading, setChallengeError, setAIError],
+    () => ({ ...state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, removeMessage, setSubmissionResult, setLoading, setChallengeError, setAIError }),
+    [state, setChallenge, setCurrentCode, setLanguage, setConversation, setRevision, setMessages, appendMessage, removeMessage, setSubmissionResult, setLoading, setChallengeError, setAIError],
   );
 
   return <ChallengeWorkspaceContext.Provider value={value}>{children}</ChallengeWorkspaceContext.Provider>;

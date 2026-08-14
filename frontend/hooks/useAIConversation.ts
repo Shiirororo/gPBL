@@ -6,6 +6,7 @@ import { aiAPI, AIAPIError } from "@/features/ai/api"
 import type { AIConversationDetail, ConversationStatus } from "@/features/ai/types"
 import { useChallengeWorkspace } from "@/hooks/useChallengeWorkspace"
 import { isConversationForChallenge } from "@/lib/conversation-scope"
+import { createOptimisticUserMessage } from "@/lib/optimistic-ai-message"
 import type { AIMessage } from "@/providers/ChallengeWorkspaceProvider"
 import { generateId } from "@/utils/id"
 
@@ -25,10 +26,20 @@ function messagesFrom(detail: AIConversationDetail): AIMessage[] {
 
 export function useAIConversation() {
   const workspace = useChallengeWorkspace()
-  const { conversationId, currentCode, revision, setConversation, setCurrentCode, setAIError } = workspace
+  const {
+    conversationId,
+    currentCode,
+    revision,
+    setConversation,
+    setCurrentCode,
+    appendMessage,
+    removeMessage,
+    setAIError,
+  } = workspace
   const challengeId = workspace.challenge?.challenge_id
   const starterCode = workspace.challenge?.starter_code ?? ""
   const challengeIdRef = useRef(challengeId)
+  const sendInFlightRef = useRef(false)
   const [isSending, setIsSending] = useState(false)
   const [isInitializing, setIsInitializing] = useState(false)
   const requestRef = useRef<{
@@ -112,8 +123,15 @@ export function useAIConversation() {
 
   const sendMessage = useCallback(async (question: string) => {
     const trimmed = question.trim()
-    if (!trimmed || isSending || conversationId === null || challengeId === undefined) return false
+    if (
+      !trimmed ||
+      isSending ||
+      sendInFlightRef.current ||
+      conversationId === null ||
+      challengeId === undefined
+    ) return false
     const requestChallengeId = challengeId
+    sendInFlightRef.current = true
     setIsSending(true)
     setAIError(null)
     const previousRequest = requestRef.current
@@ -134,6 +152,8 @@ export function useAIConversation() {
           revision,
         }
     requestRef.current = request
+    const optimisticMessage = createOptimisticUserMessage(request.id, trimmed, currentCode)
+    appendMessage(optimisticMessage)
     try {
       await aiAPI.sendMessage(conversationId, {
         challenge_id: requestChallengeId,
@@ -147,12 +167,12 @@ export function useAIConversation() {
       return true
     } catch (error) {
       if (challengeIdRef.current !== requestChallengeId) return false
-      if (
-        error instanceof AIAPIError &&
-        [409, 503].includes(error.status)
-      ) {
-        await loadDetail(conversationId, false, requestChallengeId).catch(() => undefined)
-      }
+      const syncedDetail = await loadDetail(
+        conversationId,
+        false,
+        requestChallengeId,
+      ).catch(() => null)
+      if (!syncedDetail) removeMessage(optimisticMessage.id)
       if (error instanceof AIAPIError && error.code === "ai_unavailable") requestRef.current = null
       
       // Handle AI lock error specifically
@@ -165,9 +185,10 @@ export function useAIConversation() {
       
       return false
     } finally {
+      sendInFlightRef.current = false
       setIsSending(false)
     }
-  }, [challengeId, conversationId, currentCode, isSending, loadDetail, revision, setAIError])
+  }, [appendMessage, challengeId, conversationId, currentCode, isSending, loadDetail, removeMessage, revision, setAIError])
 
   const startNew = useCallback(async () => {
     if (!challengeId) return

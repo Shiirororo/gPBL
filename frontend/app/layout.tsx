@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ui/toast-provider";
 import { UserProvider } from "@/providers/UserProvider";
 import { AssessmentGate } from "@/components/AssessmentGate";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { AssessmentProvider } from "@/providers/AssessmentProvider";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["vietnamese", "latin"], // Hỗ trợ đầy đủ ký tự tiếng Việt.
@@ -29,9 +30,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <QueryProvider>
             <ToastProvider>
               <UserProvider>
-                <AssessmentGate>
-                  <main>{children}</main>
-                </AssessmentGate>
+                <AssessmentProvider>
+                  <AssessmentGate>
+                    <main>{children}</main>
+                  </AssessmentGate>
+                </AssessmentProvider>
               </UserProvider>
             </ToastProvider>
           </QueryProvider>
