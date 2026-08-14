@@ -26,9 +26,19 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    AVATAR_CHOICES = [
+        (f"Avatar{index:02}.png", f"Avatar {index:02}")
+        for index in range(1, 7)
+    ]
+
     user_id = models.BigAutoField(primary_key=True)
     user_name = models.CharField(max_length=100, unique=True)
     score = models.IntegerField(default=0)
+    avatar = models.CharField(
+        max_length=32,
+        choices=AVATAR_CHOICES,
+        default="Avatar01.png",
+    )
 
     # Required by Django admin & auth system
     is_staff = models.BooleanField(default=False)
