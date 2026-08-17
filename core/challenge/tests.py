@@ -1,4 +1,8 @@
+from unittest.mock import patch
+
+from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -63,3 +67,39 @@ class ChallengeCompletionRateTests(APITestCase):
         response = self.client.get(reverse("challenge-create"))
 
         self.assertEqual(response.status_code, 401)
+
+
+class ChallengeStartTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(user_name="starter", password="pass1234")
+        self.challenge = CodingChallenge.objects.create(
+            title="Configurable AI lock",
+            description="Verify the configured lock duration.",
+        )
+
+        token = AccessToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    @override_settings(AI_LOCK_DURATION_MINUTES=3)
+    @patch("core.challenge.views.LockService.get_lock_expiry")
+    @patch("core.challenge.views.LockService.create_ai_lock")
+    def test_start_uses_configured_ai_lock_duration(
+        self,
+        create_ai_lock,
+        get_lock_expiry,
+    ):
+        lock_expiry = timezone.now()
+        create_ai_lock.return_value = object()
+        get_lock_expiry.return_value = lock_expiry
+
+        response = self.client.post(
+            reverse("challenge-start", kwargs={"challenge_id": self.challenge.pk})
+        )
+
+        self.assertEqual(response.status_code, 201)
+        create_ai_lock.assert_called_once_with(self.user, duration_minutes=3)
+        self.assertEqual(response.data["ai_lock_duration_minutes"], 3)
+        self.assertEqual(
+            response.data["message"],
+            "Challenge started successfully. AI assistance will be available in 3 minutes.",
+        )

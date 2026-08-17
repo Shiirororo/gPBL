@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -64,7 +65,7 @@ class ChallengeStartView(APIView):
     def post(self, request, challenge_id):
         """
         Start a new challenge session for the user.
-        This creates a 10-minute AI assistance lock.
+        This creates an AI assistance lock using the configured duration.
         """
         try:
             # Check if challenge exists
@@ -88,8 +89,12 @@ class ChallengeStartView(APIView):
                     }
                 )
 
-                # Create 10-minute AI lock
-                lock = LockService.create_ai_lock(request.user, duration_minutes=10)
+                # Lấy thời gian khóa từ cấu hình để có thể thay đổi qua biến môi trường.
+                duration_minutes = settings.AI_LOCK_DURATION_MINUTES
+                lock = LockService.create_ai_lock(
+                    request.user,
+                    duration_minutes=duration_minutes,
+                )
                 
                 if not lock:
                     return Response(
@@ -107,8 +112,11 @@ class ChallengeStartView(APIView):
                     'started_at': session.started_at.isoformat(),
                     'ai_locked': True,
                     'ai_locked_until': lock_expiry.isoformat() if lock_expiry else None,
-                    'ai_lock_duration_minutes': 10,
-                    'message': 'Challenge started successfully. AI assistance will be available in 10 minutes.',
+                    'ai_lock_duration_minutes': duration_minutes,
+                    'message': (
+                        'Challenge started successfully. '
+                        f'AI assistance will be available in {duration_minutes} minutes.'
+                    ),
                     'session_created': created
                 }
 
