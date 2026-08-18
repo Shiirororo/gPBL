@@ -79,7 +79,7 @@ export default function Navbar() {
         <span className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground text-background">
           <Code size={13} weight="bold" />
         </span>
-        <span className="tracking-tight">gPBL</span>
+        <span className="tracking-tight">Rovia</span>
       </Link>
 
       {/* ── Centre nav ── */}

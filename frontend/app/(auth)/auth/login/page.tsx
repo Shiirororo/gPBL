@@ -21,7 +21,7 @@ export default function LoginPage() {
           />
           <div className="absolute inset-0 flex items-end bg-gradient-to-t from-stone-950/50 to-transparent p-8">
             <p className="text-lg font-medium italic text-white">
-              &ldquo;AI intergrated code learning platform&rdquo;
+              &ldquo;Rovia - AI intergrated code learning platform&rdquo;
             </p>
           </div>
         </div>
