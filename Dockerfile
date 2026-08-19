@@ -1,34 +1,36 @@
-# Use an official Python runtime as a parent image
+# ==========================================
+# Backend Dockerfile (Django REST API)
+# ==========================================
 FROM python:3.12-slim
 
-# Set environment variables
+# Prevent Python from writing .pyc files and buffer stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
-# - pkg-config and default-libmysqlclient-dev are required for mysqlclient
-# - build-essential is required for compiling Python packages
-RUN apt-get update && apt-get install -y \
+# Install system dependencies required for mysqlclient and building packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     default-libmysqlclient-dev \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt /app/
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy project
-COPY . /app/
+# Copy backend source code and core modules
+COPY core /app/core
+COPY src /app/src
 
-# Expose the port the app runs on
-EXPOSE 8000
-
-# Set the working directory to where manage.py is located
+# Set working directory to where manage.py is located
 WORKDIR /app/src
 
-# Run the Django server
+# Expose Django development port
+EXPOSE 8000
+
+# Run Django development server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

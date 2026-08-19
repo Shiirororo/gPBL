@@ -1,3 +1,0 @@
-{
-  "code": "import sys, json\nfrom typing import List\nclass Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        hm = {}\n        n = len(nums)\n        for i in range(n):\n            if target - nums[i] in hm:\n                return [hm[target - nums[i]], i]\n            hm[nums[i]] = i\n\nif __name__ == '__main__':\n    data = json.loads(sys.stdin.read())\n    ans = Solution().twoSum(data['nums'], data['target'])\n    print(json.dumps(ans, separators=(',', ':')))"
-}
